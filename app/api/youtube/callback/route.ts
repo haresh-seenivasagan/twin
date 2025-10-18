@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { storeToken } from '@/lib/youtube/token-store'
+import { createClient } from '@/lib/supabase/server'
+import { YouTubeClient } from '@/lib/youtube/client'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
@@ -24,6 +25,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Get authenticated user from Supabase
+    const supabase = await createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      throw new Error('User not authenticated')
+    }
+
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -45,35 +54,68 @@ export async function GET(request: NextRequest) {
     }
 
     const tokenData = await tokenResponse.json()
-    const { access_token, refresh_token } = tokenData
+    const { access_token, refresh_token, expires_in, scope, token_type } = tokenData
 
-    // Get user info
-    const userInfoResponse = await fetch(
-      'https://www.googleapis.com/oauth2/v1/userinfo',
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      }
-    )
+    // Calculate token expiration
+    const expiresAt = new Date(Date.now() + expires_in * 1000).toISOString()
 
-    if (!userInfoResponse.ok) {
-      throw new Error('Failed to fetch user info')
+    // Save tokens to Supabase
+    const { error: tokenSaveError } = await supabase
+      .from('user_youtube_tokens')
+      .upsert({
+        user_id: user.id,
+        access_token,
+        refresh_token,
+        token_type: token_type || 'Bearer',
+        expires_at: expiresAt,
+        scope,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id'
+      })
+
+    if (tokenSaveError) {
+      console.error('Failed to save YouTube tokens:', tokenSaveError)
+      throw new Error('Failed to save YouTube tokens')
     }
 
-    const userInfo = await userInfoResponse.json()
-    const email = userInfo.email
+    // Fetch YouTube data using the YouTubeClient
+    const youtubeClient = new YouTubeClient(access_token)
 
-    // Store tokens
-    storeToken(email, {
-      access_token,
-      refresh_token,
-    })
+    const [subscriptions, likedVideos, playlists] = await Promise.all([
+      youtubeClient.getSubscriptions(),
+      youtubeClient.getLikedVideos(),
+      youtubeClient.getPlaylists(),
+    ])
 
-    // Redirect to onboarding/connect page with success
-    const redirectUrl = new URL('/onboarding/connect', request.nextUrl.origin)
+    // Save YouTube data to user_personas table
+    const youtubeData = {
+      subscriptions,
+      likedVideos,
+      playlists,
+      fetchedAt: new Date().toISOString(),
+    }
+
+    const { error: dataSaveError } = await supabase
+      .from('user_personas')
+      .upsert({
+        user_id: user.id,
+        youtube_data: youtubeData,
+        persona: {}, // Empty for now, will be generated in the next step
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id',
+        ignoreDuplicates: false,
+      })
+
+    if (dataSaveError) {
+      console.error('Failed to save YouTube data:', dataSaveError)
+      throw new Error('Failed to save YouTube data')
+    }
+
+    // Redirect to onboarding/generate page with success
+    const redirectUrl = new URL('/onboarding/generate', request.nextUrl.origin)
     redirectUrl.searchParams.set('youtube', 'connected')
-    redirectUrl.searchParams.set('email', email)
 
     return NextResponse.redirect(redirectUrl.toString())
   } catch (error) {

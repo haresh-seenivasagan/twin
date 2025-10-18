@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Brain, Sparkles, Loader2, Info, ChevronRight } from 'lucide-react'
-import { generatePersonaFromAccounts } from '@/lib/persona/generator'
 
 interface GenerationOptions {
   includeCustomInstructions: boolean
@@ -33,44 +32,34 @@ export default function GeneratePersonaPage() {
   const handleGenerate = async () => {
     setGenerating(true)
 
-    // Mock persona generation - in production, this would call an AI service
-    setTimeout(() => {
-      // Store generated persona in session storage for the next page
-      const mockPersona = {
-        name: 'Alex Chen',
-        profession: 'Senior Software Engineer',
-        languages: ['English', 'Mandarin'],
-        interests: ['TypeScript', 'React', 'AI/ML', 'Cloud Architecture', 'Open Source'],
-        currentGoals: [
-          'Master advanced TypeScript patterns',
-          'Contribute to major open source projects',
-          'Build AI-powered applications',
-          'Improve system design skills'
-        ],
-        communicationStyle: {
-          formality: 'casual',
-          verbosity: 'concise',
-          technicalLevel: 'advanced'
+    try {
+      // Call the API to generate persona using MCP server
+      const response = await fetch('/api/persona/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        workingHours: 'Flexible, mostly 9-5 PST',
-        preferences: {
-          codeStyle: 'Functional programming with clean architecture',
-          documentation: 'Comprehensive with examples',
-          testing: 'TDD approach with high coverage'
-        }
+        body: JSON.stringify({
+          focusAreas: selectedFocusAreas,
+          customInstructions: customInstructions || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to generate persona')
       }
 
-      // Add custom instructions influence if provided
-      if (customInstructions) {
-        (mockPersona.preferences as any).customContext = customInstructions
-      }
+      const result = await response.json()
 
-      sessionStorage.setItem('generatedPersona', JSON.stringify(mockPersona))
-      sessionStorage.setItem('focusAreas', JSON.stringify(selectedFocusAreas))
-
-      setGenerating(false)
+      // Persona is now saved in Supabase, redirect to review page
       router.push('/onboarding/review')
-    }, 3000)
+    } catch (error) {
+      console.error('Error generating persona:', error)
+      alert(error instanceof Error ? error.message : 'Failed to generate persona. Please try again.')
+    } finally {
+      setGenerating(false)
+    }
   }
 
   const toggleFocusArea = (areaId: string) => {

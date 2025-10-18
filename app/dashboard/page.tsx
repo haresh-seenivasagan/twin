@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { signOut } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Brain, Plus, Settings, FileText, Sparkles } from 'lucide-react'
+import { Brain, Plus, Settings, FileText, Sparkles, LogOut } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function DashboardPage() {
@@ -42,6 +43,11 @@ export default async function DashboardPage() {
                 <Settings className="h-5 w-5" />
               </Button>
             </Link>
+            <form action={signOut}>
+              <Button variant="ghost" size="icon" type="submit">
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </form>
           </div>
         </div>
       </nav>

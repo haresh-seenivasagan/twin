@@ -17,34 +17,61 @@ export default function ReviewPersonaPage() {
   const [editedPersona, setEditedPersona] = useState<GeneratedPersona | null>(null)
 
   useEffect(() => {
-    // Load generated persona from session storage
-    const storedPersona = sessionStorage.getItem('generatedPersona')
-    if (storedPersona) {
-      const parsed = JSON.parse(storedPersona)
-      setPersona(parsed)
-      setEditedPersona(parsed)
-    } else {
-      // If no persona, redirect back to generation
-      router.push('/onboarding/generate')
+    // Load generated persona from Supabase via API
+    const fetchPersona = async () => {
+      try {
+        const response = await fetch('/api/persona/generate')
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch persona')
+        }
+
+        const result = await response.json()
+
+        if (result.persona && Object.keys(result.persona).length > 0) {
+          setPersona(result.persona)
+          setEditedPersona(result.persona)
+        } else {
+          // If no persona generated yet, redirect back to generation
+          router.push('/onboarding/generate')
+        }
+      } catch (error) {
+        console.error('Error fetching persona:', error)
+        // On error, redirect back to generation
+        router.push('/onboarding/generate')
+      }
     }
+
+    fetchPersona()
   }, [router])
 
   const handleSave = async () => {
     setSaving(true)
 
-    // In production, this would save to the database
-    // For now, we'll store in session and redirect to dashboard
-    setTimeout(async () => {
-      // Mock saving to Supabase
-      sessionStorage.setItem('savedPersona', JSON.stringify(editedPersona))
+    try {
+      // Save the edited persona to Supabase
+      const response = await fetch('/api/persona/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          persona: editedPersona,
+        }),
+      })
 
-      // Clear the generated persona from session
-      sessionStorage.removeItem('generatedPersona')
-      sessionStorage.removeItem('focusAreas')
+      if (!response.ok) {
+        throw new Error('Failed to save persona')
+      }
 
-      setSaving(false)
+      // Redirect to dashboard
       router.push('/dashboard')
-    }, 1500)
+    } catch (error) {
+      console.error('Error saving persona:', error)
+      alert('Failed to save persona. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const updateField = (field: string, value: any) => {
