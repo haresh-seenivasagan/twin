@@ -31,12 +31,12 @@ NEXT_PUBLIC_USE_MOCK=true pnpm dev
 |-------------------|-----------|
 | **Understand what Twin is** | You're reading it (README) |
 | **Start coding immediately** | Quick Start above ↑ |
+| **See current status & next steps** | [INIT.md](./INIT.md#-current-status-2025-01-18) |
 | **Set up real services** | [INIT.md](./INIT.md#setup) |
 | **Understand the architecture** | [INIT.md](./INIT.md#architecture) |
-| **Run tests** | [INIT.md](./INIT.md#testing) |
-| **Deploy to production** | [INIT.md](./INIT.md#deployment) |
-| **Use the API** | [INIT.md](./INIT.md#api-reference) |
-| **Work in parallel with team** | [INIT.md](./INIT.md#parallel-development) |
+| **Deploy to production** | [DEPLOYMENT.md](./DEPLOYMENT.md) |
+| **Use persona MCP server** | [workers/mcp-persona/README.md](./workers/mcp-persona/README.md) |
+| **Test persona generation** | `cd workers/mcp-persona && ./test-persona.sh` |
 
 ## ✅ MVP Success Criteria
 

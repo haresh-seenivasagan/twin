@@ -50,6 +50,88 @@ export default function createServer({ config }: { config: z.infer<typeof config
     }
   );
 
+  // persona.generate_mock
+  server.registerTool(
+    "persona.generate_mock",
+    {
+      title: "Generate mock persona for testing",
+      description: "Creates a test persona with optional custom instructions. Perfect for development and testing.",
+      inputSchema: z.object({
+        customInstructions: z.string().optional().describe("Optional freeform instructions (e.g., 'Make them a senior developer from Singapore')"),
+        template: z.enum(["developer", "designer", "manager", "student", "random"]).default("random").describe("Preset persona template"),
+      }),
+      outputSchema: PersonaSchema,
+    },
+    async ({ customInstructions, template = "random" }) => {
+      const templates = {
+        developer: {
+          name: "Alex Chen",
+          languages: ["en", "zh"],
+          preferredLanguage: "en",
+          style: { formality: "casual", verbosity: "concise", technical_level: "advanced" },
+          interests: ["TypeScript", "React", "Systems Design", "AI/ML"],
+          profession: "Senior Full-Stack Developer",
+          currentGoals: ["Build scalable microservices", "Learn Rust", "Contribute to open source"],
+        },
+        designer: {
+          name: "Maya Patel",
+          languages: ["en"],
+          preferredLanguage: "en",
+          style: { formality: "casual", verbosity: "balanced", technical_level: "intermediate" },
+          interests: ["UI/UX", "Figma", "Design Systems", "Accessibility"],
+          profession: "Product Designer",
+          currentGoals: ["Master design systems", "Improve accessibility skills", "Learn motion design"],
+        },
+        manager: {
+          name: "Jordan Lee",
+          languages: ["en", "ko"],
+          preferredLanguage: "en",
+          style: { formality: "adaptive", verbosity: "balanced", technical_level: "intermediate" },
+          interests: ["Team Leadership", "Agile", "Product Strategy", "Mentoring"],
+          profession: "Engineering Manager",
+          currentGoals: ["Grow engineering team", "Improve 1:1s", "Learn data-driven decision making"],
+        },
+        student: {
+          name: "Sam Wilson",
+          languages: ["en"],
+          preferredLanguage: "en",
+          style: { formality: "casual", verbosity: "detailed", technical_level: "beginner" },
+          interests: ["Web Development", "Python", "Data Science", "Machine Learning"],
+          profession: "Computer Science Student",
+          currentGoals: ["Complete CS degree", "Build portfolio projects", "Land first internship"],
+        },
+      };
+
+      let persona = templates[template === "random" ? ["developer", "designer", "manager", "student"][Math.floor(Math.random() * 4)] as keyof typeof templates : template as keyof typeof templates];
+
+      // Apply custom instructions if provided
+      if (customInstructions) {
+        const lower = customInstructions.toLowerCase();
+        if (lower.includes("singapore") || lower.includes("sg")) {
+          persona.languages = ["en", "zh", "ms"];
+        }
+        if (lower.includes("senior") || lower.includes("lead")) {
+          persona.style.technical_level = "advanced";
+          persona.profession = "Senior " + (persona.profession || "Professional");
+        }
+        if (lower.includes("junior") || lower.includes("beginner")) {
+          persona.style.technical_level = "beginner";
+        }
+        if (lower.includes("formal")) {
+          persona.style.formality = "formal";
+        }
+        if (lower.includes("verbose") || lower.includes("detailed")) {
+          persona.style.verbosity = "detailed";
+        }
+        if (lower.includes("concise") || lower.includes("brief")) {
+          persona.style.verbosity = "concise";
+        }
+      }
+
+      return { content: [{ type: "text", text: JSON.stringify(persona) }], structuredContent: persona };
+    }
+  );
+
   // persona.export
   server.registerTool(
     "persona.export",
