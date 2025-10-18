@@ -110,7 +110,7 @@ Return a JSON object matching this schema:
     "technical_level": "beginner | intermediate | advanced"
   },
   "interests": ["array of 5-8 synthesized interests from account data, NOT raw channel names"],
-  "profession": "string (their role/title, can be undefined if unknown)",
+  "profession": "string (ONLY if clear from LinkedIn/GitHub bio, otherwise empty string)",
   "currentGoals": ["array of 3-5 MEASURABLE goals based on focus areas: ${focusAreasText}"]
 }
 
