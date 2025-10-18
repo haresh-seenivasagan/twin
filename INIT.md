@@ -1,6 +1,12 @@
 # Twin - Complete Development Guide
 
-> Everything you need to build, test, and deploy Twin
+> **USE THIS FILE WHEN:** Setting up dev environment, building features, testing, deploying
+
+**📖 [README.md](./README.md):** Start here - project overview & quick demo
+**📘 THIS FILE (INIT.md):** Complete setup, all development phases, deployment
+**🚀 [workers/mcp-persona/](./workers/mcp-persona/):** Live MCP server docs
+
+---
 
 ## Table of Contents
 1. [Architecture](#architecture)

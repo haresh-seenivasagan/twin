@@ -13,28 +13,20 @@ Generate AI personas for your app - **no setup required!**
 ```bash
 curl -X POST https://twin-mcp-persona.erniesg.workers.dev/mcp \
   -H 'Content-Type: application/json' \
-  -d '{
-    "jsonrpc":"2.0",
-    "method":"tools/call",
-    "params":{
-      "name":"persona.generate_mock",
-      "arguments":{"template":"developer"}
-    },
-    "id":1
-  }' | jq -r '.result.content[0].text' | jq .
-```
-
-**Output:**
-```json
+  -d @- <<'EOF'
 {
-  "name": "Alex Chen",
-  "profession": "Senior Full-Stack Developer",
-  "languages": ["en", "zh"],
-  "currentGoals": ["Build scalable microservices", "Learn Rust"]
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "persona.generate_mock",
+    "arguments": {"template": "developer"}
+  },
+  "id": 1
 }
+EOF
 ```
 
-### From your code:
+### From TypeScript/JavaScript:
 
 ```typescript
 import { mcpClient } from '@/lib/mcp/client';
@@ -44,394 +36,282 @@ const persona = await mcpClient.generateMockPersona({
   template: 'developer',
   customInstructions: 'senior developer from Singapore'
 });
+
+console.log(persona.name);         // "Alex Chen"
+console.log(persona.languages);    // ["en", "zh", "ms"]
 ```
 
 **Available templates:** `developer`, `designer`, `manager`, `student`, `random`
 
 ---
 
-## 📊 Deployment Status
+## 📊 Status
 
-| What | Where | Status |
-|------|-------|--------|
-| **MCP Server** | https://twin-mcp-persona.erniesg.workers.dev/mcp | ✅ **LIVE** |
-| **Health Check** | https://twin-mcp-persona.erniesg.workers.dev/health | ✅ **LIVE** |
-| **Mock Personas** | 5 templates + custom instructions | ✅ **LIVE** |
-| **Rate Limiting** | 100 req/hour per IP | ✅ **LIVE** |
-| **All 8 Tools** | CRUD + Export + Generation | ✅ **LIVE** |
-
-**No API keys, no auth, no setup - just call the endpoint!** 🎉
+| Component | Status | Details |
+|-----------|--------|---------|
+| **Live URL** | ✅ https://twin-mcp-persona.erniesg.workers.dev/mcp | Production |
+| **Health** | ✅ /health | Status check |
+| **Mock Personas** | ✅ 5 templates | No OAuth needed |
+| **Real Personas** | ✅ OAuth integration | Google, GitHub, LinkedIn, Twitter |
+| **Rate Limiting** | ✅ 100/hour per IP | Lifetime limit option |
+| **All 8 Tools** | ✅ CRUD + Export | See [TOOLS.md](./TOOLS.md) |
 
 ---
 
-## Overview
+## 📚 Documentation
 
-This MCP server provides tools for:
-- Generating personalized AI personas from connected social accounts (Google, GitHub, LinkedIn, Twitter)
-- Exporting personas in multiple formats (JSON, YAML, LLM prompts)
-- Managing persona versioning and history
-- Storing personas with pluggable adapters (memory, Convex, Supabase)
+| File | Purpose |
+|------|---------|
+| **[TOOLS.md](./TOOLS.md)** | Complete API reference for all 8 tools |
+| **[ARCHITECTURE.md](./ARCHITECTURE.md)** | Technical design, LLM integration, costs |
+| **README.md** | This file - quick start & essentials |
 
-## Architecture
+---
 
-```
-src/
-├── index.ts        # Main MCP server setup and tool registration
-├── schemas.ts      # Zod schemas for validation
-├── generation.ts   # Persona generation logic from accounts
-└── adapter.ts      # Storage adapter interface + in-memory implementation
-```
+## 🎯 Common Use Cases
 
-## Tools
-
-### 1. `persona.generate_mock` - For Testing & Development 🆕
-
-Generates test personas without OAuth or real account data. Perfect for development!
-
-**Input:**
-```typescript
-{
-  template?: "developer" | "designer" | "manager" | "student" | "random";
-  customInstructions?: string;  // Freeform text!
-}
-```
-
-**Output:** Same as `generate_from_accounts` (Persona object)
-
-**Examples:**
-```typescript
-// Random persona
-{ template: "random" }
-
-// Specific role
-{ template: "developer" }
-
-// With custom instructions (freeform!)
-{
-  template: "developer",
-  customInstructions: "Make them a senior developer from Singapore who likes Rust"
-}
-```
-
-**Custom Instructions Support:**
-- Geographic hints: "singapore", "sg" → adds regional languages
-- Seniority: "senior", "lead" → advanced technical level
-- Experience: "junior", "beginner" → beginner level
-- Style: "formal", "verbose", "concise" → adjusts communication style
-
-**Templates Available:**
-- `developer` - Alex Chen, Senior Full-Stack Developer (TypeScript, React)
-- `designer` - Maya Patel, Product Designer (UI/UX, Figma)
-- `manager` - Jordan Lee, Engineering Manager (Leadership, Agile)
-- `student` - Sam Wilson, CS Student (Python, Web Dev)
-- `random` - Randomly picks one of the above
-
-### 2. `persona.generate_from_accounts`
-
-Generates a normalized persona profile from connected social/account data.
-
-**Input:**
-```typescript
-{
-  accounts: {
-    google?: { email, name, locale, picture },
-    github?: { login, name, bio, repos[], starred[] },
-    linkedin?: { name, headline, industry, skills[] },
-    twitter?: { username, name, bio, following[] }
-  }
-}
-```
-
-**Output:**
-```typescript
-{
-  name: string;
-  languages: string[];
-  preferredLanguage: string;
-  style: {
-    formality: "formal" | "casual" | "adaptive";
-    verbosity: "concise" | "detailed" | "balanced";
-    technical_level: "beginner" | "intermediate" | "advanced";
-  };
-  interests: string[];
-  profession?: string;
-  currentGoals: string[];
-}
-```
-
-**Generation Logic:**
-- **Name:** LinkedIn > Google > GitHub > Twitter
-- **Profession:** LinkedIn headline or extracted from GitHub bio
-- **Languages:** From Google locale
-- **Technical Level:** Based on GitHub repo count (>20 = advanced)
-- **Interests:** Top programming languages, GitHub starred topics, Twitter categories
-- **Goals:** Generated from GitHub repos, LinkedIn skills
-
-### 3. `persona.export`
-
-Exports a persona in different formats for various use cases.
-
-**Input:**
-```typescript
-{
-  supabaseId?: string;    // Lookup by Supabase user ID
-  personaId?: string;     // Or by persona ID
-  format?: "json" | "yaml" | "llm_prompt"
-}
-```
-
-**Output:**
-- **json:** Full persona record with metadata
-- **yaml:** Serialized YAML (placeholder - uses JSON for now)
-- **llm_prompt:** Formatted prompt for LLM context injection
-
-**LLM Prompt Example:**
-```
-You are assisting John Doe who prefers casual, balanced communication
-at advanced level. Languages: en (preferred: en).
-Current goals: Maintain and improve twin, Master full-stack development.
-```
-
-## Storage Adapters
-
-### InMemoryAdapter (Default)
-
-Simple in-memory storage for development and testing.
-
-**Features:**
-- User management with Supabase ID or email
-- Persona versioning with history
-- Field-level updates
-- Rollback to previous versions
-- No persistence (data lost on restart)
-
-### Future Adapters
-
-**ConvexAdapter** (Planned)
-- Real-time sync with Convex backend
-- Persistent storage with indexing
-- Query optimization for large datasets
-
-**SupabaseAdapter** (Planned)
-- Direct integration with Supabase database
-- RLS (Row Level Security) for multi-tenant isolation
-- PostgreSQL JSONB for flexible schema
-
-## Configuration
+### 1. Generate Mock Persona (Development)
 
 ```typescript
-{
-  "db.adapter": "memory" | "convex" | "supabase",  // Default: "memory"
-  "convex.url": string,                            // Optional: Convex deployment URL
-  "supabase.url": string,                          // Optional: Supabase project URL
-  "supabase.serviceKey": string                    // Optional: Supabase service role key
-}
-```
-
-## Development
-
-```bash
-# Install dependencies
-pnpm install
-
-# Run in development mode (with Smithery)
-pnpm dev
-
-# Build for production
-pnpm build
-
-# Start production server
-pnpm start
-
-# Run tests
-pnpm test
-```
-
-## Integration with Twin
-
-The MCP server integrates with the Twin frontend flow:
-
-1. **User connects accounts** (OAuth in `/onboarding/connect`)
-2. **Frontend calls MCP tool** `persona.generate_from_accounts`
-3. **Server generates persona** from account data
-4. **User reviews/edits** in `/onboarding/review`
-5. **Persona stored** via adapter (memory → Supabase)
-6. **Exported as LLM prompt** for personalized AI interactions
-
-## Production Deployment
-
-### Smithery Platform
-
-```bash
-# Build the MCP server
-pnpm build
-
-# Deploy to Smithery
-npx @smithery/cli deploy
-```
-
-The `.smithery/` directory contains the built server bundle.
-
-### Environment Variables
-
-Set these in your Smithery deployment:
-
-```bash
-# For Supabase adapter
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_KEY=your-service-role-key
-
-# For Convex adapter
-CONVEX_URL=https://your-deployment.convex.cloud
-```
-
-## API Example
-
-Using the MCP server from Claude Desktop or other MCP clients:
-
-```json
-{
-  "tool": "persona.generate_from_accounts",
-  "arguments": {
-    "accounts": {
-      "github": {
-        "login": "erniesg",
-        "name": "Ernie",
-        "bio": "Full-stack developer building AI tools",
-        "repos": [
-          { "name": "twin", "language": "TypeScript", "stars": 42 },
-          { "name": "derivativ", "language": "JavaScript", "stars": 28 }
-        ],
-        "starred": [
-          { "name": "next.js", "topics": ["react", "framework", "ssr"] }
-        ]
-      }
-    }
-  }
-}
-```
-
-**Response:**
-```json
-{
-  "name": "Ernie",
-  "languages": ["en"],
-  "preferredLanguage": "en",
-  "style": {
-    "formality": "casual",
-    "verbosity": "balanced",
-    "technical_level": "intermediate"
-  },
-  "interests": ["TypeScript", "JavaScript", "react", "framework", "ssr"],
-  "profession": "Full-stack developer",
-  "currentGoals": [
-    "Maintain and improve twin",
-    "Build and ship products faster"
-  ]
-}
-```
-
-## Testing
-
-```bash
-# Run unit tests
-pnpm test
-
-# Run specific test file
-pnpm test schemas.test.ts
-```
-
-Test coverage includes:
-- Schema validation
-- Persona generation logic
-- Adapter operations (CRUD, versioning, rollback)
-- Export formatting
-
-## Security Considerations
-
-1. **Service Role Keys:** Never expose Supabase service keys in client-side code
-2. **User Isolation:** Use Supabase ID for multi-tenant persona storage
-3. **Data Validation:** All inputs validated with Zod schemas
-4. **RLS Policies:** Enable Row Level Security in Supabase adapter
-
-## Quick Test
-
-```bash
-# Run the test script
-./test-persona.sh
-
-# Or manually:
-pnpm dev
-# In another terminal:
-curl -X POST http://localhost:3000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"tool":"persona.generate_mock","arguments":{"template":"developer"}}'
-```
-
-## For Consumers: Using Personas in Your App
-
-### Quick Integration
-
-```typescript
-// 1. Generate test persona (no OAuth needed!)
-const persona = await mcp.callTool("persona.generate_mock", {
-  template: "developer",
-  customInstructions: "senior developer from Singapore"
+const persona = await mcpClient.generateMockPersona({
+  template: 'developer'
 });
+```
 
-// 2. Export as LLM prompt
-const prompt = await mcp.callTool("persona.export", {
+### 2. Generate from Connected Accounts (Production)
+
+```typescript
+const persona = await mcpClient.generateFromAccounts({
+  google: { name: "John Doe", email: "john@example.com" },
+  github: { login: "johndoe", repos: [...] }
+});
+```
+
+### 3. Export as LLM Prompt
+
+```typescript
+const prompt = await mcpClient.exportPersona({
   personaId: persona.id,
-  format: "llm_prompt"
+  format: 'llm_prompt'
 });
-
-// 3. Use in your LLM call
-const response = await openai.chat.completions.create({
-  messages: [
-    { role: "system", content: prompt.content },
-    { role: "user", content: "Help me design an API" }
-  ]
-});
+// "You are assisting Alex Chen who prefers casual, concise communication..."
 ```
 
-### Common Patterns
+### 4. Save & Retrieve
 
-**Pattern 1: Persona-Based Routing**
 ```typescript
-const persona = await getPersona(userId);
+// Save
+const { id } = await mcpClient.savePersona(userId, persona);
 
-// Route based on technical level
-const llm = persona.style.technical_level === "advanced"
-  ? "claude-3-opus"   // Complex reasoning
-  : "claude-3-haiku"; // Simpler, faster
-
-// Adjust response length
-const maxTokens = persona.style.verbosity === "concise" ? 500 : 2000;
+// Retrieve
+const saved = await mcpClient.getPersona(userId);
 ```
 
-**Pattern 2: Multi-Persona Testing**
-```typescript
-const personas = await Promise.all([
-  mcp.callTool("persona.generate_mock", { template: "developer" }),
-  mcp.callTool("persona.generate_mock", { template: "designer" }),
-  mcp.callTool("persona.generate_mock", { template: "manager" })
-]);
+---
 
-for (const persona of personas) {
-  await testYourApp(persona);
+## 🚀 Deployment
+
+### Quick Deploy
+
+```bash
+cd workers/mcp-persona
+
+# Create KV namespace for rate limiting
+wrangler kv namespace create "RATE_LIMIT"
+# Copy the ID to wrangler.toml
+
+# Deploy
+wrangler deploy
+```
+
+### Configuration
+
+**wrangler.toml:**
+```toml
+name = "twin-mcp-persona"
+main = "cloudflare-worker.js"
+
+[vars]
+DB_ADAPTER = "memory"  # or "supabase"
+RATE_LIMIT_PER_HOUR = "100"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "your-kv-namespace-id"
+```
+
+### Secrets (Optional)
+
+```bash
+# For LLM-powered generation (future)
+wrangler secret put OPENAI_API_KEY
+
+# For persistent storage (future)
+wrangler secret put SUPABASE_URL
+wrangler secret put SUPABASE_SERVICE_KEY
+
+# For admin unlimited access
+wrangler secret put ADMIN_API_KEYS  # Comma-separated keys
+```
+
+---
+
+## 🛡️ Rate Limiting
+
+**Current:** 100 requests/hour per IP address
+
+### Check Remaining Calls
+
+Rate limit info in response headers:
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: <timestamp>
+```
+
+### When Rate Limited
+
+HTTP 429 response:
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": 429,
+    "message": "Rate limit exceeded. Try again in 1 hour."
+  }
 }
 ```
 
-## Roadmap
+### Admin Bypass (Unlimited Calls)
 
-- [ ] Implement ConvexAdapter for real-time sync
-- [ ] Implement SupabaseAdapter with RLS
-- [ ] Add memory integration (mem0) for context retrieval
-- [ ] Add persona diff/merge tools
-- [ ] Support incremental updates from account refreshes
-- [ ] Add analytics for persona usage patterns
-- [ ] Export to additional formats (PDF, Markdown)
+Set admin API keys:
+```bash
+wrangler secret put ADMIN_API_KEYS
+# Enter: your-secret-key-1,your-secret-key-2
+```
 
-## License
+Use admin key:
+```bash
+curl -H 'X-API-Key: your-secret-key-1' ...
+# No rate limits!
+```
 
-MIT
+---
+
+## 🔧 Development
+
+### Local Testing
+
+```bash
+# Start dev server
+wrangler dev
+
+# Test health check
+curl http://localhost:8787/health
+
+# Generate mock persona
+curl -X POST http://localhost:8787/mcp \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"persona.generate_mock","arguments":{"template":"developer"}},"id":1}'
+```
+
+### Run Tests
+
+```bash
+./test-deployment.sh
+```
+
+Expected output:
+```
+🧪 Testing Twin MCP Persona Server Deployment
+✅ Health check passed
+✅ Tools list passed (8 tools)
+✅ Mock generation passed
+✅ All tests passed!
+```
+
+---
+
+## 🏗️ Architecture Overview
+
+```
+Cloudflare Worker
+├── MCP Protocol Handler (JSON-RPC 2.0)
+├── 8 Tools (mock, generate, save, get, update, history, rollback, export)
+├── Rate Limiter (KV-based, per-IP)
+└── Storage Adapter (in-memory → Supabase in future)
+```
+
+**Current Storage:** In-memory (stateless, per-request)
+**Future:** Supabase (persistent, versioned)
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for full technical details.
+
+---
+
+## 🎨 Available Tools (8 total)
+
+| Tool | Purpose | Status |
+|------|---------|--------|
+| `persona.generate_mock` | Test personas (no OAuth) | ✅ Live |
+| `persona.generate_from_accounts` | Real personas from OAuth | ✅ Live |
+| `persona.save` | Create/update persona | ✅ Live |
+| `persona.get` | Retrieve by ID | ✅ Live |
+| `persona.update_field` | Partial updates | ✅ Live |
+| `persona.get_history` | Version history | ✅ Live |
+| `persona.rollback` | Undo changes | ✅ Live |
+| `persona.export` | JSON/YAML/LLM prompts | ✅ Live |
+
+**Full API reference:** [TOOLS.md](./TOOLS.md)
+
+---
+
+## 🔐 Security
+
+- ✅ API keys stored in Cloudflare secrets (never in git)
+- ✅ Rate limiting active (prevents abuse)
+- ✅ CORS enabled (configurable origins)
+- ✅ Input validation (Zod schemas)
+- ⏳ Supabase RLS (future, for multi-tenant storage)
+
+---
+
+## 🐛 Troubleshooting
+
+### "Rate limit exceeded"
+- Wait 1 hour or use admin API key
+- Check `X-RateLimit-Remaining` header
+
+### "Persona not found"
+- In-memory storage doesn't persist between requests
+- Use mock generation for immediate testing
+- Persistent storage coming with Supabase adapter
+
+### CORS errors
+- CORS is enabled for all origins (`*`)
+- Check browser console for specific errors
+
+---
+
+## 🚦 Roadmap
+
+- [x] Mock persona generation
+- [x] OAuth-based generation
+- [x] Full CRUD operations
+- [x] Rate limiting (IP-based)
+- [ ] LLM-powered enrichment
+- [ ] Persistent storage (Supabase)
+- [ ] User-based rate limits
+- [ ] Usage analytics dashboard
+
+---
+
+## 📞 Support
+
+- **Issues:** Create an issue in the repo
+- **Questions:** Check [ARCHITECTURE.md](./ARCHITECTURE.md) for technical details
+- **API Reference:** See [TOOLS.md](./TOOLS.md)
+
+**Version:** 974e40b9-2ad2-41dc-bed3-68c2a826d942
+**Deployed:** Cloudflare Workers
+**Health:** https://twin-mcp-persona.erniesg.workers.dev/health

@@ -2,6 +2,12 @@
 
 > Your AI persona that travels with you across every LLM
 
+**📖 THIS FILE:** Project overview, what Twin is, quick demo
+**📘 [INIT.md](./INIT.md):** Complete setup, development phases, testing, deployment
+**🚀 [workers/mcp-persona/](./workers/mcp-persona/):** Live MCP server (generate personas now!)
+
+---
+
 ## 🚀 Quick Start (No API keys needed!)
 
 ```bash
