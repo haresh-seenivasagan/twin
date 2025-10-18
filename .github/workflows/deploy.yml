@@ -29,6 +29,12 @@ jobs:
         run: pnpm install
 
       - name: Build Next.js application
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL: https://twin.erniesg.workers.dev
+          NEXT_PUBLIC_USE_MOCK: false
+          NEXT_PUBLIC_MCP_SERVER_URL: https://twin-mcp-persona.erniesg.workers.dev/mcp
         run: pnpm build
 
       - name: Build for Cloudflare
