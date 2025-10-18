@@ -1,8 +1,17 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Manrope } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const bodyFont = Manrope({
+  subsets: ['latin'],
+  variable: '--font-body',
+  weight: ['400', '500', '600', '700', '800']
+})
+const headingFont = Manrope({
+  subsets: ['latin'],
+  variable: '--font-heading',
+  weight: ['600', '700', '800']
+})
 
 export const metadata: Metadata = {
   title: 'Twin - Your AI Persona & Memory System',
@@ -15,9 +24,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <div className="relative min-h-screen bg-background">
+    <html lang="en" suppressHydrationWarning translate="no">
+      <body className={`${bodyFont.variable} ${headingFont.variable} page-warm`} suppressHydrationWarning>
+        <div className="relative min-h-screen">
           {children}
         </div>
       </body>

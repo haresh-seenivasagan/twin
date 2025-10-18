@@ -1,13 +1,13 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Brain, Sparkles, Shield, Zap, Globe, Users } from 'lucide-react'
+import { Brain, Sparkles, Shield, Zap, Mail, Linkedin, Youtube } from 'lucide-react'
 
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Navigation */}
-      <nav className="border-b">
+      <nav className="sticky top-0 z-50 border-b border-white/20 bg-white/10 backdrop-blur-md shadow-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Brain className="h-8 w-8 text-primary" />
@@ -25,179 +25,113 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="flex-1 flex items-center justify-center py-20 px-4">
+      <section className="relative flex-1 flex items-center justify-center py-20 px-4 hero-gradient">
+        {/* floating gradient orbs */}
+        <div aria-hidden className="gradient-orbs">
+          <div className="orb orb-1" />
+          <div className="orb orb-2" />
+        </div>
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center space-y-6">
+          <div className="text-center space-y-6 animate-fade-up">
             <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm">
               <Sparkles className="mr-2 h-4 w-4 text-primary" />
-              <span className="text-primary font-medium">AI-Powered Persona System</span>
+              <span className="text-primary font-medium">AI-Powered Persona Tool</span>
             </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight">
-              Your AI Twin
-              <span className="block text-primary">Remembers Everything</span>
+            <h1 className="heading-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+              Your personal memory MCP
             </h1>
 
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Connect your accounts, generate your unique persona, and let AI maintain context
-              across all your interactions. Your goals, preferences, and memories - always remembered.
+            <p className="heading-display text-2xl md:text-3xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Maximum personalization anywhere
             </p>
 
             <div className="flex items-center justify-center gap-4 pt-4">
               <Link href="/signup">
-                <Button size="lg" className="text-lg px-8">
+                <Button size="lg" className="text-lg px-8 soft-btn">
                   Create Your Twin
                 </Button>
               </Link>
-              <Link href="#how-it-works">
-                <Button size="lg" variant="outline" className="text-lg px-8">
-                  See How It Works
+              <Link href="#demo">
+                <Button size="lg" variant="outline" className="text-lg px-8 soft-btn">
+                  Watch Demo
                 </Button>
               </Link>
             </div>
 
-            {/* Trust Indicators */}
-            <div className="flex items-center justify-center gap-8 pt-8 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                <span>End-to-end encrypted</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                <span>Instant setup</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4" />
-                <span>Works everywhere</span>
-              </div>
-            </div>
+            {/* Trust Indicators removed per design update */}
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="py-20 px-4 bg-secondary/30">
+      {/* Demo Section */}
+      <section id="demo" className="py-20 px-4 bg-secondary/30">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              How Twin Works
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Three simple steps to your personalized AI experience
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">See Twin in Action</h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed px-4 md:px-0">
+              Watch a short demo of persona generation and memory. With Twin, you can provide a dynamic user persona to any LLM or agent — including powering a more personalized YouTube feed.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="relative">
-              <div className="absolute -top-6 left-6 h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
-                1
-              </div>
-              <CardContent className="pt-10 pb-8 px-6">
-                <h3 className="text-xl font-semibold mb-3">Connect Your Accounts</h3>
-                <p className="text-muted-foreground">
-                  Link your YouTube, Gmail, LinkedIn, and other accounts. Your data stays private and secure.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="relative">
-              <div className="absolute -top-6 left-6 h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
-                2
-              </div>
-              <CardContent className="pt-10 pb-8 px-6">
-                <h3 className="text-xl font-semibold mb-3">Auto-Generate Persona</h3>
-                <p className="text-muted-foreground">
-                  We analyze your connected data to create a rich persona with your interests, goals, and preferences.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="relative">
-              <div className="absolute -top-6 left-6 h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
-                3
-              </div>
-              <CardContent className="pt-10 pb-8 px-6">
-                <h3 className="text-xl font-semibold mb-3">AI Remembers You</h3>
-                <p className="text-muted-foreground">
-                  Every AI interaction uses your persona and memories for truly personalized assistance.
-                </p>
-              </CardContent>
-            </Card>
+          {/* YouTube Embed */}
+          <div className="aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow">
+            <iframe
+              className="w-full h-full"
+              src={`https://www.youtube.com/embed/${process.env.NEXT_PUBLIC_DEMO_VIDEO_ID || 'P_h9Mt0ZzWg'}?rel=0`}
+              title="Twin Demo Video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
           </div>
+
+          {/* data source badges removed per request */}
         </div>
       </section>
 
-      {/* Features */}
+      {/* Use Case: Persona‑Powered YouTube Feed */}
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Powerful Features
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Everything you need for persistent AI context
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Scenario: Persona‑Powered YouTube Feed</h2>
+            <p className="text-lg text-muted-foreground tracking-normal max-w-4xl mx-auto">
+              Twin builds a dynamic persona from your viewing signals so YouTube’s feed surfaces videos that match your interests, expertise, and current intent — more relevance, less noise.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Step 1: Authorize data sources */}
+            <div className="flex flex-col gap-3">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Youtube className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="font-semibold">Authorize Sources</h3>
+              <p className="text-sm text-muted-foreground tracking-normal max-w-[46ch] min-h-[3.5rem]">
+                Enable YouTube with one click; LinkedIn and Gmail authorizations are coming soon.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-1 text-xs">
+                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">YouTube • Live</span>
+                <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground">LinkedIn • soon</span>
+                <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Gmail • soon</span>
+              </div>
+            </div>
+
+            {/* Step 2: Dynamic persona */}
             <div className="flex flex-col gap-3">
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Brain className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold">Smart Persona Generation</h3>
-              <p className="text-sm text-muted-foreground">
-                Automatically extracts your professional background, interests, and communication style from connected accounts.
-              </p>
+              <h3 className="font-semibold">Dynamic Persona</h3>
+              <p className="text-sm text-muted-foreground tracking-normal max-w-[46ch] min-h-[3.5rem]">Your viewing signals maintain a living persona — interests, expertise, and intent.</p>
             </div>
 
+            {/* Step 3: Persona‑powered ranking */}
             <div className="flex flex-col gap-3">
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Sparkles className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold">Custom Instructions</h3>
-              <p className="text-sm text-muted-foreground">
-                Add specific instructions per prompt to fine-tune how AI interacts with you for different tasks.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-semibold">Memory Management</h3>
-              <p className="text-sm text-muted-foreground">
-                Full CRUD control over your memories. Associate memories with specific tasks and goals.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Zap className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-semibold">Task Context</h3>
-              <p className="text-sm text-muted-foreground">
-                Memories are intelligently filtered based on current task relevance for optimal context.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Globe className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-semibold">Multi-LLM Support</h3>
-              <p className="text-sm text-muted-foreground">
-                Works with OpenAI, Claude, Google Gemini, and more. Switch models based on task type.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-semibold">Export & Import</h3>
-              <p className="text-sm text-muted-foreground">
-                Export your persona and memories to JSON/YAML. Import and sync across platforms.
-              </p>
+              <h3 className="font-semibold">Recommendations About You</h3>
+              <p className="text-sm text-muted-foreground tracking-normal max-w-[46ch] min-h-[3.5rem]">The persona powers ranking so every recommended video is truly relevant to you.</p>
             </div>
           </div>
         </div>
