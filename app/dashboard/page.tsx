@@ -14,19 +14,22 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  // Get user profile
-  const { data: profile } = await supabase
-    .from('profiles')
+  // Get user persona from user_personas table
+  const { data: personaRecord } = await supabase
+    .from('user_personas')
     .select('*')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single()
 
   // Check if user has completed onboarding
-  const hasPersona = profile?.persona && Object.keys(profile.persona).length > 0
+  const hasPersona = personaRecord?.persona && Object.keys(personaRecord.persona).length > 0
 
   if (!hasPersona) {
     redirect('/onboarding/connect')
   }
+
+  // Use persona from user_personas table
+  const persona = personaRecord?.persona
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,7 +58,7 @@ export default async function DashboardPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Welcome back, {profile?.persona?.name || user.email}</h1>
+          <h1 className="text-3xl font-bold">Welcome back, {persona?.name || user.email}</h1>
           <p className="text-muted-foreground mt-2">
             Manage your AI persona and memories from your dashboard
           </p>
@@ -73,7 +76,7 @@ export default async function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">1</div>
               <p className="text-xs text-muted-foreground">
-                {profile?.persona?.name || 'Default'}
+                {persona?.name || 'Default'}
               </p>
             </CardContent>
           </Card>
@@ -117,7 +120,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {profile?.persona?.currentGoals?.length || 0}
+                {persona?.currentGoals?.length || 0}
               </div>
               <p className="text-xs text-muted-foreground">
                 Active goals
@@ -181,7 +184,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Current Persona Display */}
-        {profile?.persona && (
+        {persona && (
           <Card className="mt-8">
             <CardHeader>
               <CardTitle>Your Current Persona</CardTitle>
@@ -192,21 +195,21 @@ export default async function DashboardPage() {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <span className="font-semibold">Name:</span> {profile.persona.name || 'Not set'}
+                  <span className="font-semibold">Name:</span> {persona.name || 'Not set'}
                 </div>
                 <div>
-                  <span className="font-semibold">Profession:</span> {profile.persona.profession || 'Not set'}
+                  <span className="font-semibold">Profession:</span> {persona.profession || 'Not set'}
                 </div>
                 <div>
-                  <span className="font-semibold">Languages:</span> {profile.persona.languages?.join(', ') || 'Not set'}
+                  <span className="font-semibold">Languages:</span> {persona.languages?.join(', ') || 'Not set'}
                 </div>
                 <div>
-                  <span className="font-semibold">Interests:</span> {profile.persona.interests?.join(', ') || 'Not set'}
+                  <span className="font-semibold">Interests:</span> {persona.interests?.join(', ') || 'Not set'}
                 </div>
                 <div>
                   <span className="font-semibold">Current Goals:</span>
                   <ul className="list-disc list-inside mt-1">
-                    {profile.persona.currentGoals?.map((goal: string, index: number) => (
+                    {persona.currentGoals?.map((goal: string, index: number) => (
                       <li key={index}>{goal}</li>
                     )) || <li>No goals set</li>}
                   </ul>
