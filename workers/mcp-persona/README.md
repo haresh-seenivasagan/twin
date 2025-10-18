@@ -52,9 +52,12 @@ console.log(persona.languages);    // ["en", "zh", "ms"]
 | **Live URL** | ✅ https://twin-mcp-persona.erniesg.workers.dev/mcp | Production |
 | **Health** | ✅ /health | Status check |
 | **Mock Personas** | ✅ 5 templates | No OAuth needed |
-| **Real Personas** | ✅ OAuth integration | Google, GitHub, LinkedIn, Twitter |
-| **Rate Limiting** | ✅ 100/hour per IP | Lifetime limit option |
+| **Real Personas** | ✅ OAuth integration | YouTube subscriptions → interests & goals |
+| **LLM Generation** | ✅ Google Gemini | Gemini 2.0 Flash Experimental |
+| **Fallback Mode** | ✅ Rule-based | When no API key set |
+| **Rate Limiting** | ✅ 50 lifetime calls/IP | Admin bypass available |
 | **All 8 Tools** | ✅ CRUD + Export | See [TOOLS.md](./TOOLS.md) |
+| **MCP Protocol** | ✅ Full support | initialize, tools, prompts, resources |
 
 ---
 
@@ -111,20 +114,51 @@ const saved = await mcpClient.getPersona(userId);
 
 ## 🚀 Deployment
 
-### Quick Deploy
+### Prerequisites
+
+1. **Cloudflare account** with Workers enabled
+2. **Gemini API key** (get free at https://aistudio.google.com/apikey)
+3. **Node.js 18+** and `wrangler` CLI
+
+### Local Development Setup
 
 ```bash
 cd workers/mcp-persona
 
-# Create KV namespace for rate limiting
-wrangler kv namespace create "RATE_LIMIT"
-# Copy the ID to wrangler.toml
+# 1. Copy environment template
+cp .env.example .env.local
 
-# Deploy
+# 2. Add your Gemini API key to .env.local
+# GEMINI_API_KEY=your-actual-key-here
+
+# 3. Start dev server
+wrangler dev
+
+# 4. Test in another terminal
+curl http://localhost:8787/health
+```
+
+**Note:** `.env.local` is gitignored and never committed!
+
+### Production Deploy
+
+```bash
+# 1. Create KV namespace for rate limiting
+wrangler kv namespace create "RATE_LIMIT"
+# Copy the ID to wrangler.toml [[kv_namespaces]] section
+
+# 2. Set production secrets
+wrangler secret put GEMINI_API_KEY
+# Paste your Gemini API key when prompted
+
+wrangler secret put ADMIN_API_KEYS
+# Paste comma-separated admin keys (for unlimited access)
+
+# 3. Deploy
 wrangler deploy
 ```
 
-### Configuration
+### Configuration Files
 
 **wrangler.toml:**
 ```toml
@@ -132,27 +166,28 @@ name = "twin-mcp-persona"
 main = "cloudflare-worker.js"
 
 [vars]
-DB_ADAPTER = "memory"  # or "supabase"
-RATE_LIMIT_PER_HOUR = "100"
+DB_ADAPTER = "memory"       # or "supabase" (future)
+LIFETIME_LIMIT = "50"       # Total calls per IP (not per hour)
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
 id = "your-kv-namespace-id"
 ```
 
-### Secrets (Optional)
-
+**.env.local** (for local dev only):
 ```bash
-# For LLM-powered generation (future)
-wrangler secret put OPENAI_API_KEY
-
-# For persistent storage (future)
-wrangler secret put SUPABASE_URL
-wrangler secret put SUPABASE_SERVICE_KEY
-
-# For admin unlimited access
-wrangler secret put ADMIN_API_KEYS  # Comma-separated keys
+GEMINI_API_KEY=your-gemini-api-key-here
+DB_ADAPTER=memory
 ```
+
+### Environment Variables
+
+| Variable | Where Set | Purpose |
+|----------|-----------|---------|
+| `GEMINI_API_KEY` | `.env.local` (dev) / Cloudflare Secret (prod) | **REQUIRED** for LLM generation |
+| `ADMIN_API_KEYS` | Cloudflare Secret | Comma-separated keys for unlimited access |
+| `DB_ADAPTER` | `wrangler.toml` [vars] | Storage backend: `memory` or `supabase` |
+| `LIFETIME_LIMIT` | `wrangler.toml` [vars] | Total calls per IP (default: 50) |
 
 ---
 
@@ -235,15 +270,44 @@ Expected output:
 ## 🏗️ Architecture Overview
 
 ```
-Cloudflare Worker
+Cloudflare Worker (cloudflare-worker.js)
 ├── MCP Protocol Handler (JSON-RPC 2.0)
-├── 8 Tools (mock, generate, save, get, update, history, rollback, export)
+│   ├── initialize (declare capabilities)
+│   ├── tools/list (8 tools)
+│   ├── tools/call (execute tool)
+│   ├── prompts/list (empty, for MCP clients)
+│   ├── resources/list (empty, for MCP clients)
+│   └── notifications/initialized (acknowledge init)
+│
+├── Persona Generation (src/generation.ts + src/llm.ts)
+│   ├── 🤖 LLM Mode: Google Gemini 2.0 Flash Experimental
+│   │   └── Analyzes YouTube subscriptions → personalized goals
+│   └── 📋 Fallback Mode: Rule-based heuristics
+│       └── When GEMINI_API_KEY not set
+│
 ├── Rate Limiter (KV-based, per-IP)
-└── Storage Adapter (in-memory → Supabase in future)
+│   ├── 50 calls lifetime (not per hour)
+│   └── Admin bypass with API key
+│
+└── Storage Adapter (src/adapter.ts)
+    ├── ✅ In-memory (current, stateless)
+    └── ⏳ Supabase (future, persistent + versioned)
 ```
 
-**Current Storage:** In-memory (stateless, per-request)
-**Future:** Supabase (persistent, versioned)
+### Generation Modes
+
+**🤖 LLM-Powered (Primary):**
+- Uses Google Gemini 2.0 Flash Experimental
+- Input: YouTube subscriptions + playlists + focus areas
+- Output: Personalized goals, interests, communication style
+- Cost: ~$0.001 per persona
+- **Active when:** `GEMINI_API_KEY` is set
+
+**📋 Rule-Based Fallback:**
+- Simple heuristics (channel name → interests)
+- Used when API key is missing or LLM fails
+- Free, instant, predictable
+- **Active when:** No API key or LLM error
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for full technical details.
 
@@ -295,14 +359,29 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for full technical details.
 
 ## 🚦 Roadmap
 
-- [x] Mock persona generation
-- [x] OAuth-based generation
-- [x] Full CRUD operations
-- [x] Rate limiting (IP-based)
-- [ ] LLM-powered enrichment
-- [ ] Persistent storage (Supabase)
-- [ ] User-based rate limits
+### ✅ Completed
+- [x] Mock persona generation (5 templates)
+- [x] OAuth-based generation (YouTube integration)
+- [x] **LLM-powered enrichment (Gemini 2.0 Flash)**
+- [x] Rule-based fallback (no API key needed)
+- [x] Full CRUD operations (8 tools)
+- [x] Rate limiting (IP-based, lifetime limit)
+- [x] Admin bypass (unlimited calls)
+- [x] MCP protocol support (tools, prompts, resources)
+- [x] Smithery.ai registry integration
+
+### 🚧 In Progress
+- [ ] Persistent storage (Supabase adapter)
+- [ ] User-based rate limits (vs IP-based)
+- [ ] Version history persistence
 - [ ] Usage analytics dashboard
+
+### 📋 Planned
+- [ ] Multi-provider LLM support (Claude, GPT-4)
+- [ ] LinkedIn/GitHub data integration
+- [ ] Persona A/B testing
+- [ ] Custom persona templates
+- [ ] Team/organization personas
 
 ---
 
