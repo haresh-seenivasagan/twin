@@ -38,6 +38,12 @@ jobs:
         run: pnpm build
 
       - name: Build for Cloudflare
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL: https://twin.erniesg.workers.dev
+          NEXT_PUBLIC_USE_MOCK: false
+          NEXT_PUBLIC_MCP_SERVER_URL: https://twin-mcp-persona.erniesg.workers.dev/mcp
         run: echo "n" | npx @opennextjs/cloudflare build || npx @opennextjs/cloudflare build --skip-prompts || npx @opennextjs/cloudflare build
 
       - name: Deploy to Cloudflare Workers
