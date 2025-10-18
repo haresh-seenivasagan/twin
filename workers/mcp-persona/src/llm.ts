@@ -27,35 +27,83 @@ export async function generatePersonaWithLLM(
   // Build rich context from connected accounts
   const context = buildAccountContext(accounts, options);
 
-  // Build focus areas instruction if provided
-  const focusInstruction = options?.focusAreas?.length
-    ? `\n\nIMPORTANT - USER'S PRIORITY FOCUS AREAS:
-The user has specifically selected these areas as their current priorities: ${options.focusAreas.join(', ')}
-- Generate goals that DIRECTLY relate to these focus areas
-- Prioritize interests that align with these areas
-- Balance technical interests from their data with their stated focus areas`
-    : '';
+  // Build focus areas instruction if provided (FRONT-LOAD THIS)
+  const hasFocusAreas = options?.focusAreas && options.focusAreas.length > 0;
+  const focusAreasText = hasFocusAreas ? options.focusAreas.join(', ') : '';
 
   const customInstruction = options?.customInstructions
     ? `\n\nUSER'S CUSTOM INSTRUCTIONS:\n${options.customInstructions}`
     : '';
 
   // Create prompt for persona generation
-  const prompt = `You are an expert at creating detailed user personas from connected account data.
+  // CRITICAL: Focus areas DOMINATE goal generation
+  const prompt = hasFocusAreas
+    ? `You are an expert at creating detailed user personas from connected account data.
+
+🎯 PRIMARY DIRECTIVE - USER'S FOCUS AREAS:
+The user has explicitly selected these life areas as their current priorities:
+${focusAreasText}
+
+YOUR TASK:
+1. Generate 3-5 MEASURABLE, ACTIONABLE goals that DIRECTLY advance these focus areas
+2. Use connected account data ONLY to enrich interests and communication style
+3. If account data (YouTube, GitHub, etc.) doesn't align with focus areas, IGNORE it for goal generation
+
+Connected Account Data (FOR INTERESTS & STYLE ONLY):
+${context}${customInstruction}
+
+GOAL GENERATION RULES (CRITICAL):
+- ✅ Goals MUST be specific, measurable, and time-bound (SMART framework)
+- ✅ Goals MUST directly relate to the focus areas: ${focusAreasText}
+- ✅ Each goal should have a clear outcome (e.g., "Complete 3 dates per month" NOT "Improve dating life")
+- ❌ DO NOT generate goals about YouTube content topics unless they match focus areas
+- ❌ DO NOT default to technical/programming goals unless "technical" is a focus area
+
+FOCUS AREA EXAMPLES:
+- "relationships" → "Initiate 2 meaningful conversations per week with new people", "Complete communication skills course by end of month"
+- "health" → "Exercise 4x per week for 30 minutes", "Meal prep every Sunday for the week ahead"
+- "career" → "Apply to 5 senior roles by month-end", "Complete leadership certification within 3 months"
+
+Generate a persona that is:
+- Insightful: Synthesize interests from account data, don't just list channel names
+- Goal-focused: Prioritize focus areas above all else
+- Measurable: Every goal should have a clear success metric
+- Actionable: Goals should be specific steps, not vague aspirations
+
+Return a JSON object matching this schema:
+{
+  "name": "string (their name from accounts)",
+  "languages": ["array of language codes like 'en', 'zh'"],
+  "preferredLanguage": "string (primary language code)",
+  "style": {
+    "formality": "casual | formal | adaptive",
+    "verbosity": "concise | detailed | balanced",
+    "technical_level": "beginner | intermediate | advanced"
+  },
+  "interests": ["array of 5-8 synthesized interests from account data, NOT raw channel names"],
+  "profession": "string (their role/title, can be undefined if unknown)",
+  "currentGoals": ["array of 3-5 MEASURABLE goals based on focus areas: ${focusAreasText}"]
+}
+
+FINAL REMINDER:
+- Interests: Use YouTube/GitHub data to synthesize themes
+- Goals: MUST align with focus areas (${focusAreasText}), ignore account data if misaligned
+- Make goals specific, measurable, and actionable (SMART framework)`
+    : `You are an expert at creating detailed user personas from connected account data.
 
 Analyze this user's connected accounts and create a comprehensive persona that captures:
 1. Their professional identity and technical expertise
 2. Core interests and focus areas (synthesize from their activity, not just list channel names)
 3. Communication preferences and learning style
-4. Specific, actionable current goals based on their recent activity${options?.focusAreas?.length ? ' AND their selected focus areas' : ''}
+4. Specific, actionable current goals based on their recent activity
 
 Connected Account Data:
-${context}${focusInstruction}${customInstruction}
+${context}${customInstruction}
 
 Generate a persona that is:
 - Insightful: Go beyond surface-level data extraction
 - Personalized: Reflect their unique combination of interests and expertise
-- Actionable: Include specific goals that match their current trajectory${options?.focusAreas?.length ? ' and selected focus areas' : ''}
+- Actionable: Include specific, measurable goals that match their current trajectory
 - Coherent: Create a unified profile, not just aggregated data
 
 Return a JSON object matching this schema:
@@ -70,12 +118,12 @@ Return a JSON object matching this schema:
   },
   "interests": ["array of 5-8 synthesized interests, NOT raw channel names"],
   "profession": "string (their role/title, can be undefined if unknown)",
-  "currentGoals": ["array of 3-5 specific, personalized goals based on their activity"]
+  "currentGoals": ["array of 3-5 specific, measurable goals based on their activity"]
 }
 
 IMPORTANT:
 - For interests: Synthesize themes (e.g., "Building production AI applications" NOT "AI/ML Channel")
-- For goals: Be specific to their context (e.g., "Master TypeScript generics for React components" NOT "Learn new technologies")
+- For goals: Be specific and measurable (e.g., "Master TypeScript generics for React components" NOT "Learn new technologies")
 - Infer technical level from GitHub activity, LinkedIn skills, and content complexity
 - Choose communication style based on their professional profile and content consumption`;
 
