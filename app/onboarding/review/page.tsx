@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Brain, Save, ChevronLeft, Check } from 'lucide-react'
+import { Save, ChevronLeft, Check } from 'lucide-react'
+import { InfinityIcon } from '@/components/ui/infinity-icon'
 import type { GeneratedPersona } from '@/lib/persona/generator'
 import { PersonaEditor } from '@/components/persona/PersonaEditor'
 import { DebugPanel } from '@/components/debug/DebugPanel'
@@ -87,7 +88,7 @@ export default function ReviewPersonaPage() {
       <nav className="border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Brain className="h-8 w-8 text-primary" />
+            <InfinityIcon className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold">Twin</span>
           </div>
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">

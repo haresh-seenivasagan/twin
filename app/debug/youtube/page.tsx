@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Brain, Youtube, RefreshCw, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { Youtube, RefreshCw, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { InfinityIcon } from '@/components/ui/infinity-icon'
 import Link from 'next/link'
 
 interface YouTubeData {
@@ -80,7 +81,7 @@ export default function YouTubeDebugPage() {
       <nav className="border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Brain className="h-8 w-8 text-primary" />
+            <InfinityIcon className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold">Twin</span>
             <span className="text-sm text-muted-foreground ml-4">/ YouTube Debug</span>
           </div>

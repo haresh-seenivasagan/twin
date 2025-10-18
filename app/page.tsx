@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Brain, Sparkles, Shield, Zap, Mail, Linkedin, Youtube } from 'lucide-react'
+import { Sparkles, Shield, Zap, Mail, Linkedin, Youtube } from 'lucide-react'
+import { InfinityIcon } from '@/components/ui/infinity-icon'
 
 export default function LandingPage() {
   return (
@@ -10,7 +11,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-white/20 bg-white/10 backdrop-blur-md shadow-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Brain className="h-8 w-8 text-primary" />
+            <InfinityIcon className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold">Twin</span>
           </div>
           <div className="flex items-center space-x-4">
@@ -39,7 +40,7 @@ export default function LandingPage() {
             </div>
 
             <h1 className="heading-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              Your personal memory MCP
+              Your personal memory plugin
             </h1>
 
             <p className="heading-display text-2xl md:text-3xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
@@ -119,7 +120,7 @@ export default function LandingPage() {
             {/* Step 2: Dynamic persona */}
             <div className="flex flex-col gap-3">
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Brain className="h-6 w-6 text-primary" />
+                <InfinityIcon className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-semibold">Dynamic Persona</h3>
               <p className="text-sm text-muted-foreground tracking-normal max-w-[46ch] min-h-[3.5rem]">Your viewing signals maintain a living persona — interests, expertise, and intent.</p>

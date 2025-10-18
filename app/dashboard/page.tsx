@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Brain, Plus, Settings, FileText, Sparkles, LogOut, Save, Check } from 'lucide-react'
+import { Plus, Settings, FileText, Sparkles, LogOut, Save, Check } from 'lucide-react'
+import { InfinityIcon } from '@/components/ui/infinity-icon'
 import Link from 'next/link'
 import type { GeneratedPersona } from '@/lib/persona/generator'
 import { PersonaEditor } from '@/components/persona/PersonaEditor'
@@ -171,7 +172,7 @@ export default function DashboardPage() {
       <nav className="border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Brain className="h-8 w-8 text-primary" />
+            <InfinityIcon className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold">Twin</span>
           </div>
           <div className="flex items-center space-x-4">
@@ -203,7 +204,7 @@ export default function DashboardPage() {
               <CardTitle className="text-sm font-medium">
                 Active Persona
               </CardTitle>
-              <Brain className="h-4 w-4 text-muted-foreground" />
+              <InfinityIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">1</div>
@@ -307,7 +308,7 @@ export default function DashboardPage() {
             <CardContent>
               <Link href="/onboarding/generate">
                 <Button className="w-full" variant="outline">
-                  <Brain className="mr-2 h-4 w-4" />
+                  <InfinityIcon className="mr-2 h-4 w-4" />
                   Regenerate
                 </Button>
               </Link>

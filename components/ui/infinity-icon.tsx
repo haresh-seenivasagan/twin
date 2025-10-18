@@ -1,0 +1,22 @@
+import React from 'react'
+
+interface InfinityIconProps {
+  className?: string
+}
+
+export function InfinityIcon({ className = 'h-6 w-6' }: InfinityIconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M18.178 8C21.054 8 23.25 10.015 23.25 12.5C23.25 14.985 21.054 17 18.178 17C16.596 17 15.181 16.165 14.277 14.948L12.007 11.913L9.723 14.948C8.819 16.165 7.404 17 5.822 17C2.946 17 0.75 14.985 0.75 12.5C0.75 10.015 2.946 8 5.822 8C7.404 8 8.819 8.835 9.723 10.052L12.007 13.098L14.277 10.052C15.181 8.835 16.596 8 18.178 8Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
