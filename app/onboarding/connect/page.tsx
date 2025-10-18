@@ -24,6 +24,7 @@ function ConnectAccountsContent() {
   const [connectedEmail, setConnectedEmail] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [youtubeStats, setYoutubeStats] = useState<{subs: number, playlists: number, liked: number} | null>(null)
+  const [hasExistingPersona, setHasExistingPersona] = useState(false)
   const [connections, setConnections] = useState<AccountConnection[]>([
     {
       id: 'youtube',
@@ -35,16 +36,16 @@ function ConnectAccountsContent() {
     },
     {
       id: 'gmail',
-      name: 'Gmail',
-      icon: <Mail className="h-6 w-6" />,
+      name: 'Gmail (Coming Soon)',
+      icon: <Mail className="h-6 w-6 opacity-50" />,
       connected: false,
       description: 'Connect Gmail to understand your communication style and professional context',
       dataPoints: ['Email patterns', 'Professional contacts', 'Communication style', 'Topics of interest']
     },
     {
       id: 'linkedin',
-      name: 'LinkedIn',
-      icon: <Linkedin className="h-6 w-6" />,
+      name: 'LinkedIn (Coming Soon)',
+      icon: <Linkedin className="h-6 w-6 opacity-50" />,
       connected: false,
       description: 'Connect LinkedIn to extract your professional background and skills',
       dataPoints: ['Work experience', 'Skills', 'Professional network', 'Career goals']
@@ -96,6 +97,24 @@ function ConnectAccountsContent() {
           liked: youtubeData.liked_videos?.length || 0,
         })
       }
+
+      // Check if user has an existing persona
+      const { data: personaData, error: personaError } = await supabase
+        .from('user_personas')
+        .select('persona')
+        .eq('user_id', user.id)
+        .single()
+
+      console.log('[Connect] Persona check:', {
+        found: !!personaData,
+        error: personaError?.message,
+        hasPersona: personaData?.persona && Object.keys(personaData.persona).length > 0
+      })
+
+      if (personaData?.persona && Object.keys(personaData.persona).length > 0) {
+        console.log('[Connect] User has existing persona - button will say Regenerate')
+        setHasExistingPersona(true)
+      }
     }
 
     checkExistingConnections()
@@ -144,24 +163,16 @@ function ConnectAccountsContent() {
   }, [searchParams])
 
   const handleConnect = async (accountId: string) => {
-    setLoading(accountId)
-    setError(null)
-
-    if (accountId === 'youtube') {
-      // Real YouTube OAuth flow
-      window.location.href = '/api/youtube/login'
+    // Only allow YouTube connections for now
+    if (accountId !== 'youtube') {
       return
     }
 
-    // Mock connection for Gmail and LinkedIn (not implemented yet)
-    setTimeout(() => {
-      setConnections(prev =>
-        prev.map(conn =>
-          conn.id === accountId ? { ...conn, connected: true } : conn
-        )
-      )
-      setLoading(null)
-    }, 1500)
+    setLoading(accountId)
+    setError(null)
+
+    // Real YouTube OAuth flow
+    window.location.href = '/api/youtube/login'
   }
 
   const handleContinue = () => {
@@ -227,51 +238,57 @@ function ConnectAccountsContent() {
 
         {/* Connection Cards */}
         <div className="space-y-4 mb-8">
-          {connections.map((account) => (
-            <Card key={account.id} className={account.connected ? 'border-green-500' : ''}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${account.connected ? 'bg-green-100 dark:bg-green-900' : 'bg-secondary'}`}>
-                      {account.icon}
+          {connections.map((account) => {
+            const isInactive = account.id !== 'youtube'
+            return (
+              <Card
+                key={account.id}
+                className={`${account.connected ? 'border-green-500' : ''} ${isInactive ? 'opacity-60' : ''}`}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-lg ${account.connected ? 'bg-green-100 dark:bg-green-900' : 'bg-secondary'}`}>
+                        {account.icon}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{account.name}</CardTitle>
+                        <CardDescription className="text-sm">
+                          {account.description}
+                        </CardDescription>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-lg">{account.name}</CardTitle>
-                      <CardDescription className="text-sm">
-                        {account.description}
-                      </CardDescription>
-                    </div>
+                    {account.connected ? (
+                      <div className="flex items-center text-green-600 dark:text-green-400">
+                        <Check className="h-5 w-5 mr-2" />
+                        <span className="text-sm font-medium">Already Connected</span>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => handleConnect(account.id)}
+                        disabled={loading === account.id || isInactive}
+                        variant="outline"
+                      >
+                        {loading === account.id ? 'Connecting...' : 'Connect'}
+                      </Button>
+                    )}
                   </div>
-                  {account.connected ? (
-                    <div className="flex items-center text-green-600 dark:text-green-400">
-                      <Check className="h-5 w-5 mr-2" />
-                      <span className="text-sm font-medium">Already Connected</span>
-                    </div>
-                  ) : (
-                    <Button
-                      onClick={() => handleConnect(account.id)}
-                      disabled={loading === account.id}
-                      variant="outline"
-                    >
-                      {loading === account.id ? 'Connecting...' : 'Connect'}
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {account.dataPoints.map((point, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 text-xs bg-secondary rounded-full"
-                    >
-                      {point}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {account.dataPoints.map((point, index) => (
+                      <span
+                        key={index}
+                        className="px-2 py-1 text-xs bg-secondary rounded-full"
+                      >
+                        {point}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
 
         {/* Info Card */}
@@ -316,21 +333,13 @@ function ConnectAccountsContent() {
           >
             {hasConnections ? (
               <>
-                Generate My Persona
+                {hasExistingPersona ? 'Regenerate My Persona' : 'Generate My Persona'}
                 <ChevronRight className="ml-2 h-4 w-4" />
               </>
             ) : (
               'Connect at least one account'
             )}
           </Button>
-        </div>
-
-        {/* Implementation Notice */}
-        <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            <strong>Note:</strong> YouTube uses real OAuth authentication. Gmail and LinkedIn connections
-            are currently mocked for demonstration purposes.
-          </p>
         </div>
       </main>
     </div>
