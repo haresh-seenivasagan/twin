@@ -1,6 +1,68 @@
 # Twin MCP Persona Server
 
-Model Context Protocol (MCP) server for AI persona generation and management in the Twin project.
+**🚀 LIVE:** https://twin-mcp-persona.erniesg.workers.dev/mcp
+
+Generate AI personas for your app - **no setup required!**
+
+---
+
+## ⚡ Quick Start (< 30 seconds)
+
+### Try it right now:
+
+```bash
+curl -X POST https://twin-mcp-persona.erniesg.workers.dev/mcp \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "jsonrpc":"2.0",
+    "method":"tools/call",
+    "params":{
+      "name":"persona.generate_mock",
+      "arguments":{"template":"developer"}
+    },
+    "id":1
+  }' | jq -r '.result.content[0].text' | jq .
+```
+
+**Output:**
+```json
+{
+  "name": "Alex Chen",
+  "profession": "Senior Full-Stack Developer",
+  "languages": ["en", "zh"],
+  "currentGoals": ["Build scalable microservices", "Learn Rust"]
+}
+```
+
+### From your code:
+
+```typescript
+import { mcpClient } from '@/lib/mcp/client';
+
+// ✅ Works immediately - no configuration needed!
+const persona = await mcpClient.generateMockPersona({
+  template: 'developer',
+  customInstructions: 'senior developer from Singapore'
+});
+```
+
+**Available templates:** `developer`, `designer`, `manager`, `student`, `random`
+
+---
+
+## 📊 Deployment Status
+
+| What | Where | Status |
+|------|-------|--------|
+| **MCP Server** | https://twin-mcp-persona.erniesg.workers.dev/mcp | ✅ **LIVE** |
+| **Health Check** | https://twin-mcp-persona.erniesg.workers.dev/health | ✅ **LIVE** |
+| **Mock Personas** | 5 templates + custom instructions | ✅ **LIVE** |
+| **Rate Limiting** | 100 req/hour per IP | ✅ **LIVE** |
+| **All 8 Tools** | CRUD + Export + Generation | ✅ **LIVE** |
+
+**No API keys, no auth, no setup - just call the endpoint!** 🎉
+
+---
 
 ## Overview
 

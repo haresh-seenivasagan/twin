@@ -25,11 +25,57 @@ export default {
 
     const url = new URL(request.url);
 
-    // Health check
+    // Health check (no rate limit)
     if (url.pathname === '/health') {
       return new Response(JSON.stringify({ status: 'ok', service: 'twin-mcp-persona' }), {
         headers: { 'Content-Type': 'application/json' }
       });
+    }
+
+    // Rate limiting (only for /mcp endpoints)
+    if (url.pathname === '/mcp' && env.RATE_LIMIT) {
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const rateLimitKey = `rate:${ip}`;
+      const limit = parseInt(env.RATE_LIMIT_PER_HOUR || '100');
+      const ttl = 3600; // 1 hour
+
+      try {
+        const current = await env.RATE_LIMIT.get(rateLimitKey);
+        const count = current ? parseInt(current) : 0;
+
+        if (count >= limit) {
+          return new Response(JSON.stringify({
+            jsonrpc: '2.0',
+            error: {
+              code: 429,
+              message: `Rate limit exceeded. Max ${limit} requests per hour. Try again later.`
+            },
+            id: null
+          }), {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'Retry-After': '3600',
+              'X-RateLimit-Limit': limit.toString(),
+              'X-RateLimit-Remaining': '0',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+        }
+
+        // Increment counter
+        await env.RATE_LIMIT.put(rateLimitKey, (count + 1).toString(), { expirationTtl: ttl });
+
+        // Add rate limit headers to response (will be added later in actual response)
+        ctx.rateLimitInfo = {
+          limit,
+          remaining: limit - count - 1,
+          reset: Date.now() + (ttl * 1000)
+        };
+      } catch (error) {
+        // KV error - allow request but log
+        console.error('Rate limit check failed:', error);
+      }
     }
 
     // MCP endpoint
@@ -378,12 +424,54 @@ export default {
           }
 
           if (name === 'persona.export') {
-            // For now, return a mock response
+            const record = args.supabaseId
+              ? await adapter.getPersonaBySupabaseId(args.supabaseId)
+              : args.personaId
+              ? await adapter.getPersonaById(args.personaId)
+              : null;
+
+            if (!record) {
+              return new Response(JSON.stringify({
+                jsonrpc: '2.0',
+                id: body.id,
+                error: { code: -32602, message: 'Persona not found' }
+              }), {
+                status: 404,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+              });
+            }
+
+            const format = args.format || 'json';
+            let exportContent;
+
+            if (format === 'llm_prompt') {
+              const parts = [];
+              if (record.name) parts.push(`You are assisting ${record.name}`);
+              if (record.style) {
+                parts.push(`who prefers ${record.style.formality}, ${record.style.verbosity} communication at ${record.style.technical_level} level`);
+              }
+              if (record.languages?.length) {
+                parts.push(`Languages: ${record.languages.join(', ')} (preferred: ${record.preferredLanguage})`);
+              }
+              if (record.currentGoals?.length) {
+                parts.push(`Current goals: ${record.currentGoals.join(', ')}`);
+              }
+              exportContent = parts.join('. ') + '.';
+            } else if (format === 'yaml') {
+              // Simple YAML-like output (no external deps)
+              exportContent = Object.entries(record)
+                .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+                .join('\n');
+            } else {
+              // JSON format (default)
+              exportContent = JSON.stringify(record, null, 2);
+            }
+
             return new Response(JSON.stringify({
               jsonrpc: '2.0',
               id: body.id,
               result: {
-                content: [{ type: 'text', text: 'Export feature coming soon' }]
+                content: [{ type: 'text', text: exportContent }]
               }
             }), {
               headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
