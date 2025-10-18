@@ -24,12 +24,33 @@ export const LlmPreferencesSchema = z.object({
   chat: z.string().default("claude"),
 });
 
+export const YouTubeSubscriptionSchema = z.object({
+  snippet: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+  }).passthrough(),
+}).passthrough();
+
+export const YouTubePlaylistSchema = z.object({
+  snippet: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+  }).passthrough(),
+}).passthrough();
+
+export const YouTubeDataSchema = z.object({
+  subscriptions: z.array(YouTubeSubscriptionSchema).default([]),
+  playlists: z.array(YouTubePlaylistSchema).default([]),
+  liked_videos: z.array(z.any()).default([]),
+}).optional();
+
 export const GoogleProfileSchema = z.object({
-  email: z.string().email(),
-  name: z.string(),
-  locale: z.string(),
+  email: z.string().email().optional(),
+  name: z.string().optional(),
+  locale: z.string().optional(),
   picture: z.string().url().optional(),
-});
+  youtube: YouTubeDataSchema,
+}).passthrough();
 
 export const GitHubRepoSchema = z.object({
   name: z.string(),

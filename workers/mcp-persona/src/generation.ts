@@ -35,6 +35,24 @@ export function generatePersonaFromAccounts(raw: unknown): Persona {
     base.preferredLanguage = lang;
   }
 
+  // interests from YouTube subscriptions
+  if (acc.google?.youtube?.subscriptions?.length) {
+    const channelTitles = acc.google.youtube.subscriptions
+      .map(sub => sub.snippet?.title)
+      .filter(Boolean)
+      .slice(0, 10);
+    base.interests.push(...channelTitles);
+  }
+
+  // interests from YouTube playlists
+  if (acc.google?.youtube?.playlists?.length) {
+    const playlistTitles = acc.google.youtube.playlists
+      .map(pl => pl.snippet?.title)
+      .filter(Boolean)
+      .slice(0, 5);
+    base.interests.push(...playlistTitles);
+  }
+
   // interests and technical level from github repos
   if (acc.github?.repos?.length) {
     const counts = acc.github.repos.reduce<Record<string, number>>((m, r) => {
