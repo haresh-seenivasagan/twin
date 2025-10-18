@@ -45,7 +45,7 @@ export class YouTubeClient {
   }
 
   async getPlaylists(maxResults: number = 50): Promise<any[]> {
-    const params = {
+    const params: Record<string, any> = {
       part: 'snippet,contentDetails',
       mine: true,
       maxResults: Math.min(maxResults, 50)
@@ -79,7 +79,7 @@ export class YouTubeClient {
   }
 
   async getPlaylistItems(playlistId: string, maxResults: number = 50): Promise<any[]> {
-    const params = {
+    const params: Record<string, any> = {
       part: 'snippet,contentDetails',
       playlistId,
       maxResults: Math.min(maxResults, 50)
@@ -113,7 +113,7 @@ export class YouTubeClient {
   }
 
   async getSubscriptions(maxResults: number = 50): Promise<any[]> {
-    const params = {
+    const params: Record<string, any> = {
       part: 'snippet',
       mine: true,
       maxResults: Math.min(maxResults, 50)
@@ -164,7 +164,7 @@ export class YouTubeClient {
 
       // Try to get videos from the liked playlist
       try {
-        const params = {
+        const params: Record<string, any> = {
           part: 'snippet,contentDetails',
           playlistId: likedPlaylistId,
           maxResults: Math.min(maxResults, 50)
@@ -224,7 +224,7 @@ export class YouTubeClient {
       }
 
       // Step 2: Fetch videos from the uploads playlist
-      const params = {
+      const params: Record<string, any> = {
         part: 'snippet,contentDetails',
         maxResults: Math.min(maxResults, 50),
         playlistId: uploadsPlaylistId
