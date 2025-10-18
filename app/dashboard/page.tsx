@@ -38,6 +38,16 @@ export default function DashboardPage() {
 
       setUser(currentUser)
 
+      // Store userId and simple token in localStorage for extension access
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('twin_user_id', currentUser.id)
+        // Generate a simple session token (just base64 encoded userId + timestamp)
+        // This is not super secure but sufficient for extension communication
+        const sessionToken = btoa(`${currentUser.id}:${Date.now()}`)
+        localStorage.setItem('twin_session_token', sessionToken)
+        console.log('[Dashboard] Stored userId and token in localStorage for extension')
+      }
+
       // Get user persona from user_personas table
       const { data: personaData, error: personaError } = await supabase
         .from('user_personas')
