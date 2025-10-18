@@ -58,6 +58,17 @@ export async function PUT(request: Request) {
       throw new Error(`Failed to update persona: ${updateError.message}`)
     }
 
+    // Sync name back to auth.user_metadata for future persona generations
+    if (persona_data?.name && persona_data.name !== user.user_metadata?.preferred_name) {
+      await supabase.auth.updateUser({
+        data: {
+          preferred_name: persona_data.name,
+          full_name: persona_data.name,
+        }
+      })
+      console.log(`Updated user metadata with name: ${persona_data.name}`)
+    }
+
     return new Response(
       JSON.stringify({
         message: 'Persona updated successfully',
