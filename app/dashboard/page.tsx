@@ -251,48 +251,6 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Save Changes Button (shows when there are changes) */}
-        {hasChanges && (
-          <Card className="mb-6 border-primary">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold">You have unsaved changes</p>
-                  <p className="text-sm text-muted-foreground">
-                    Click save to update your persona
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setEditedPersona(persona)}
-                    disabled={saving}
-                  >
-                    Discard
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="min-w-[120px]"
-                  >
-                    {saving ? (
-                      <>
-                        <Save className="mr-2 h-4 w-4 animate-pulse" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="mr-2 h-4 w-4" />
-                        Save Changes
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Quick Actions */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
           <Card>
@@ -357,6 +315,55 @@ export default function DashboardPage() {
             persona={editedPersona}
             onUpdate={setEditedPersona}
           />
+
+          {/* Save/Discard Buttons */}
+          <div className="flex justify-between items-center mt-6 p-4 bg-muted/50 rounded-lg border">
+            <div>
+              {hasChanges ? (
+                <>
+                  <p className="font-semibold text-orange-600">You have unsaved changes</p>
+                  <p className="text-sm text-muted-foreground">
+                    Click save to update your persona
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold">All changes saved</p>
+                  <p className="text-sm text-muted-foreground">
+                    Edit any field above to make changes
+                  </p>
+                </>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {hasChanges && (
+                <Button
+                  variant="outline"
+                  onClick={() => setEditedPersona(persona)}
+                  disabled={saving}
+                >
+                  Discard Changes
+                </Button>
+              )}
+              <Button
+                onClick={handleSave}
+                disabled={saving || !hasChanges}
+                className="min-w-[120px]"
+              >
+                {saving ? (
+                  <>
+                    <Save className="mr-2 h-4 w-4 animate-pulse" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Debug Panel */}
