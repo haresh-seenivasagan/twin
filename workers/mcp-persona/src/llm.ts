@@ -27,7 +27,7 @@ export async function generatePersonaWithLLM(
     generationContext?: any;
   }
 ): Promise<Persona | null> {
-  const { apiKey, model = "gemini-2.0-flash-exp", temperature = 0.7, maxRetries = 3 } = config;
+  const { apiKey, model = "gemini-2.5-flash-latest", temperature = 0.7, maxRetries = 3 } = config;
 
   // Build rich context from connected accounts
   const context = buildAccountContext(accounts, options);

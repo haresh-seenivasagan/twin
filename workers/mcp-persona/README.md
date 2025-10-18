@@ -53,7 +53,7 @@ console.log(persona.languages);    // ["en", "zh", "ms"]
 | **Health** | ✅ /health | Status check |
 | **Mock Personas** | ✅ 5 templates | No OAuth needed |
 | **Real Personas** | ✅ OAuth integration | YouTube subscriptions → interests & goals |
-| **LLM Generation** | ✅ Google Gemini | Gemini 2.0 Flash Experimental |
+| **LLM Generation** | ✅ Google Gemini | Gemini 2.5 Flash (latest) |
 | **Fallback Mode** | ✅ Rule-based | When no API key set |
 | **Rate Limiting** | ✅ 50 lifetime calls/IP | Admin bypass available |
 | **All 8 Tools** | ✅ CRUD + Export | See [TOOLS.md](./TOOLS.md) |
@@ -280,7 +280,7 @@ Cloudflare Worker (cloudflare-worker.js)
 │   └── notifications/initialized (acknowledge init)
 │
 ├── Persona Generation (src/generation.ts + src/llm.ts)
-│   ├── 🤖 LLM Mode: Google Gemini 2.0 Flash Experimental
+│   ├── 🤖 LLM Mode: Google Gemini 2.5 Flash (latest)
 │   │   └── Analyzes YouTube subscriptions → personalized goals
 │   └── 📋 Fallback Mode: Rule-based heuristics
 │       └── When GEMINI_API_KEY not set
@@ -297,7 +297,7 @@ Cloudflare Worker (cloudflare-worker.js)
 ### Generation Modes
 
 **🤖 LLM-Powered (Primary):**
-- Uses Google Gemini 2.0 Flash Experimental
+- Uses Google Gemini 2.5 Flash (latest stable version)
 - Input: YouTube subscriptions + playlists + focus areas
 - Output: Personalized goals, interests, communication style
 - Cost: ~$0.001 per persona
@@ -362,7 +362,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for full technical details.
 ### ✅ Completed
 - [x] Mock persona generation (5 templates)
 - [x] OAuth-based generation (YouTube integration)
-- [x] **LLM-powered enrichment (Gemini 2.0 Flash)**
+- [x] **LLM-powered enrichment (Gemini 2.5 Flash)**
 - [x] Rule-based fallback (no API key needed)
 - [x] Full CRUD operations (8 tools)
 - [x] Rate limiting (IP-based, lifetime limit)
