@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Brain, Youtube, Mail, Linkedin, Check, ChevronRight, Sparkles } from 'lucide-react'
+import { Brain, Youtube, Mail, Linkedin, Check, ChevronRight, Sparkles, AlertCircle } from 'lucide-react'
 
 interface AccountConnection {
   id: string
@@ -18,7 +18,10 @@ interface AccountConnection {
 
 export default function ConnectAccountsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState<string | null>(null)
+  const [connectedEmail, setConnectedEmail] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [connections, setConnections] = useState<AccountConnection[]>([
     {
       id: 'youtube',
@@ -46,10 +49,37 @@ export default function ConnectAccountsPage() {
     }
   ])
 
+  // Check for OAuth callback success/error
+  useEffect(() => {
+    const youtubeConnected = searchParams.get('youtube')
+    const email = searchParams.get('email')
+    const errorParam = searchParams.get('error')
+
+    if (youtubeConnected === 'connected' && email) {
+      setConnectedEmail(email)
+      setConnections(prev =>
+        prev.map(conn =>
+          conn.id === 'youtube' ? { ...conn, connected: true } : conn
+        )
+      )
+    }
+
+    if (errorParam === 'youtube_auth_failed') {
+      setError('Failed to connect YouTube. Please try again.')
+    }
+  }, [searchParams])
+
   const handleConnect = async (accountId: string) => {
     setLoading(accountId)
+    setError(null)
 
-    // Mock connection - in production, this would trigger OAuth flow
+    if (accountId === 'youtube') {
+      // Real YouTube OAuth flow
+      window.location.href = '/api/youtube/login'
+      return
+    }
+
+    // Mock connection for Gmail and LinkedIn (not implemented yet)
     setTimeout(() => {
       setConnections(prev =>
         prev.map(conn =>
@@ -61,7 +91,12 @@ export default function ConnectAccountsPage() {
   }
 
   const handleContinue = () => {
-    router.push('/onboarding/generate')
+    // Pass connected email to next step for persona generation
+    if (connectedEmail) {
+      router.push(`/onboarding/generate?email=${encodeURIComponent(connectedEmail)}`)
+    } else {
+      router.push('/onboarding/generate')
+    }
   }
 
   const hasConnections = connections.some(c => c.connected)
@@ -89,6 +124,25 @@ export default function ConnectAccountsPage() {
             Link your accounts to automatically generate your AI persona. Your data stays private and secure.
           </p>
         </div>
+
+        {/* Error Alert */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {connectedEmail && (
+          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <p className="text-sm text-green-800 dark:text-green-200">
+              <strong>Success!</strong> YouTube connected for {connectedEmail}
+            </p>
+          </div>
+        )}
 
         {/* Connection Cards */}
         <div className="space-y-4 mb-8">
@@ -190,11 +244,11 @@ export default function ConnectAccountsPage() {
           </Button>
         </div>
 
-        {/* Mock Data Notice */}
-        <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            <strong>Development Mode:</strong> OAuth connections are mocked for now. In production,
-            these will connect to real YouTube, Gmail, and LinkedIn APIs.
+        {/* Implementation Notice */}
+        <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            <strong>Note:</strong> YouTube uses real OAuth authentication. Gmail and LinkedIn connections
+            are currently mocked for demonstration purposes.
           </p>
         </div>
       </main>

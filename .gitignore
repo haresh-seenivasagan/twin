@@ -56,3 +56,7 @@ wrangler.toml
 
 # OS
 Thumbs.db
+
+node_modules/
+workers/api/node_modules
+workers/api/node_modules/*
