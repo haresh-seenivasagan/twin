@@ -22,10 +22,11 @@ export async function POST(request: Request) {
     const { custom_instructions, focus_areas } = body
 
     // Fetch user's connected account data from Supabase
+    // Note: user_youtube_data uses email as the key, not user_id
     const { data: youtubeData } = await supabase
       .from('user_youtube_data')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('email', user.email)
       .single()
 
     // Build connected account data structure
@@ -33,9 +34,9 @@ export async function POST(request: Request) {
 
     if (youtubeData) {
       accountData.youtube = {
-        subscriptions: youtubeData.subscriptions?.map((s: any) => s.snippet?.title || '') || [],
-        watchHistory: [],
-        likes: youtubeData.liked_videos?.map((v: any) => v.snippet?.title || '') || [],
+        subscriptions: youtubeData.subscriptions || [],
+        playlists: youtubeData.playlists || [],
+        likes: youtubeData.liked_videos || [],
       }
     }
 

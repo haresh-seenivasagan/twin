@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Brain, Sparkles, Loader2, Info, ChevronRight } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Brain, Sparkles, Loader2, Info, ChevronRight, X, Plus } from 'lucide-react'
 
 interface GenerationOptions {
   includeCustomInstructions: boolean
@@ -19,20 +20,36 @@ export default function GeneratePersonaPage() {
   const [generating, setGenerating] = useState(false)
   const [customInstructions, setCustomInstructions] = useState('')
   const [selectedFocusAreas, setSelectedFocusAreas] = useState<string[]>([])
+  const [customGoals, setCustomGoals] = useState<string[]>([])
+  const [customGoalInput, setCustomGoalInput] = useState('')
 
   const focusAreas = [
-    { id: 'professional', label: 'Professional Growth', description: 'Career goals and work experience' },
-    { id: 'learning', label: 'Learning & Development', description: 'Educational interests and skill building' },
-    { id: 'creative', label: 'Creative Projects', description: 'Artistic and creative pursuits' },
-    { id: 'productivity', label: 'Productivity', description: 'Task management and efficiency' },
-    { id: 'personal', label: 'Personal Life', description: 'Hobbies and personal interests' },
-    { id: 'technical', label: 'Technical Skills', description: 'Programming and technical expertise' },
+    // Career & Work
+    { id: 'career', label: 'Career Advancement', icon: '📈', description: 'Promotions, job changes, leadership' },
+    { id: 'entrepreneurship', label: 'Entrepreneurship', icon: '💼', description: 'Starting or growing a business' },
+
+    // Skills & Learning
+    { id: 'technical', label: 'Technical & Programming', icon: '💻', description: 'Coding, frameworks, software engineering' },
+    { id: 'creative', label: 'Creative & Design', icon: '🎨', description: 'Art, design, content creation' },
+    { id: 'languages', label: 'Language Learning', icon: '🗣️', description: 'Learning new languages' },
+
+    // Personal Life
+    { id: 'health', label: 'Health & Fitness', icon: '💪', description: 'Exercise, nutrition, wellness' },
+    { id: 'relationships', label: 'Dating & Relationships', icon: '❤️', description: 'Personal connections and dating' },
+    { id: 'hobbies', label: 'Hobbies & Interests', icon: '🎯', description: 'Personal projects and pastimes' },
+
+    // Productivity & Growth
+    { id: 'productivity', label: 'Time Management', icon: '⏰', description: 'Efficiency and organization' },
+    { id: 'mindfulness', label: 'Mental Health', icon: '🧘', description: 'Mindfulness, therapy, self-care' },
   ]
 
   const handleGenerate = async () => {
     setGenerating(true)
 
     try {
+      // Combine pre-defined focus areas with custom goals
+      const allFocusAreas = [...selectedFocusAreas, ...customGoals]
+
       // Call the API to generate persona using MCP server
       const response = await fetch('/api/persona/generate', {
         method: 'POST',
@@ -40,7 +57,7 @@ export default function GeneratePersonaPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          focusAreas: selectedFocusAreas,
+          focusAreas: allFocusAreas,
           customInstructions: customInstructions || undefined,
         }),
       })
@@ -68,6 +85,24 @@ export default function GeneratePersonaPage() {
         ? prev.filter(id => id !== areaId)
         : [...prev, areaId]
     )
+  }
+
+  const addCustomGoal = () => {
+    if (customGoalInput.trim() && !customGoals.includes(customGoalInput.trim())) {
+      setCustomGoals(prev => [...prev, customGoalInput.trim()])
+      setCustomGoalInput('')
+    }
+  }
+
+  const removeCustomGoal = (goal: string) => {
+    setCustomGoals(prev => prev.filter(g => g !== goal))
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      addCustomGoal()
+    }
   }
 
   return (
@@ -115,13 +150,16 @@ export default function GeneratePersonaPage() {
                   }`}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-sm">{area.label}</h3>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {area.description}
-                      </p>
+                    <div className="flex items-start gap-3 flex-1">
+                      <span className="text-2xl">{area.icon}</span>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-sm">{area.label}</h3>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {area.description}
+                        </p>
+                      </div>
                     </div>
-                    <div className={`ml-2 mt-1 h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                    <div className={`ml-2 mt-1 h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                       selectedFocusAreas.includes(area.id)
                         ? 'border-primary bg-primary'
                         : 'border-muted-foreground'
@@ -133,6 +171,63 @@ export default function GeneratePersonaPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Custom Goals */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Add Custom Goals</CardTitle>
+            <CardDescription>
+              Add any specific goals not covered above (e.g., "Travel planning", "Cooking", "Meditation")
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter a custom goal..."
+                  value={customGoalInput}
+                  onChange={(e) => setCustomGoalInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={addCustomGoal}
+                  variant="outline"
+                  size="icon"
+                  disabled={!customGoalInput.trim()}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {customGoals.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {customGoals.map((goal) => (
+                    <div
+                      key={goal}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-sm"
+                    >
+                      <span>{goal}</span>
+                      <button
+                        onClick={() => removeCustomGoal(goal)}
+                        className="hover:text-destructive transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950 rounded-lg">
+                <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  Examples: Dating & Relationships, Music Production, Gardening, Investment Strategy, Public Speaking
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

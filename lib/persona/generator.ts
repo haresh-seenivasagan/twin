@@ -1,9 +1,11 @@
-// Mock persona generator - in production, this would use AI to analyze connected accounts
+import { MCPClient } from '@/lib/mcp/client'
+
+// Persona generator using MCP server
 export interface ConnectedAccountData {
   youtube?: {
-    subscriptions: string[]
-    watchHistory: string[]
-    likes: string[]
+    subscriptions: any[]  // Full YouTube API subscription objects
+    playlists: any[]      // Full YouTube API playlist objects
+    likes: any[]          // Full YouTube API liked video objects
   }
   gmail?: {
     emailPatterns: string[]
@@ -51,37 +53,96 @@ export async function generatePersonaFromAccounts(
   customInstructions?: string,
   focusAreas?: string[]
 ): Promise<GeneratedPersona> {
-  // In production, this would:
-  // 1. Send account data to an AI service
-  // 2. Use custom instructions to guide generation
-  // 3. Focus on selected areas
-  // 4. Return a rich, personalized persona
+  const mcpClient = new MCPClient()
 
-  // Mock implementation for development
-  const mockPersona: GeneratedPersona = {
-    name: extractName(accountData),
-    profession: extractProfession(accountData),
-    languages: extractLanguages(accountData),
-    interests: extractInterests(accountData),
-    currentGoals: generateGoals(accountData, focusAreas),
-    communicationStyle: {
-      formality: 'casual',
-      verbosity: 'concise',
-      technicalLevel: 'advanced'
-    },
-    workingHours: 'Flexible, mostly 9-5 PST',
-    preferences: {
-      codeStyle: 'Functional programming with clean architecture',
-      documentation: 'Comprehensive with examples',
-      testing: 'TDD approach with high coverage'
+  try {
+    // Transform account data to MCP format
+    const mcpAccountData: any = {}
+
+    if (accountData.youtube) {
+      mcpAccountData.google = {
+        youtube: {
+          subscriptions: accountData.youtube.subscriptions || [],
+          playlists: accountData.youtube.playlists || [],
+          liked_videos: accountData.youtube.likes || [],
+        }
+      }
     }
-  }
 
-  if (customInstructions) {
-    mockPersona.preferences.customContext = customInstructions
-  }
+    if (accountData.linkedin) {
+      mcpAccountData.linkedin = accountData.linkedin
+    }
 
-  return mockPersona
+    // Add focus areas and custom instructions to the account data
+    if (focusAreas && focusAreas.length > 0) {
+      mcpAccountData.focusAreas = focusAreas
+    }
+
+    if (customInstructions) {
+      mcpAccountData.customInstructions = customInstructions
+    }
+
+    console.log('Calling MCP server with account data:', {
+      hasYoutube: !!mcpAccountData.google?.youtube,
+      subscriptions: mcpAccountData.google?.youtube?.subscriptions?.length || 0,
+      playlists: mcpAccountData.google?.youtube?.playlists?.length || 0,
+      focusAreas: mcpAccountData.focusAreas,
+      hasCustomInstructions: !!customInstructions,
+    })
+
+    // Call MCP server to generate persona
+    const mcpPersona = await mcpClient.generateFromAccounts(mcpAccountData)
+
+    console.log('MCP server response:', mcpPersona)
+
+    // Transform MCP persona to our GeneratedPersona format
+    const technicalLevel: 'basic' | 'intermediate' | 'advanced' =
+      mcpPersona.style?.technical_level === 'beginner' ? 'basic' :
+      mcpPersona.style?.technical_level === 'advanced' ? 'advanced' :
+      'intermediate'
+
+    const generatedPersona: GeneratedPersona = {
+      name: mcpPersona.name || 'User',
+      profession: mcpPersona.profession || 'Professional',
+      languages: mcpPersona.languages || ['English'],
+      interests: mcpPersona.interests || [],
+      currentGoals: mcpPersona.currentGoals || [],
+      communicationStyle: {
+        formality: mcpPersona.style?.formality === 'formal' ? 'formal' : mcpPersona.style?.formality === 'casual' ? 'casual' : 'mixed',
+        verbosity: mcpPersona.style?.verbosity || 'balanced',
+        technicalLevel,
+      },
+      workingHours: 'Flexible',
+      preferences: {
+        customContext: customInstructions,
+      }
+    }
+
+    return generatedPersona
+  } catch (error) {
+    console.error('MCP persona generation failed, falling back to mock:', error)
+
+    // Fallback to mock persona if MCP fails
+    const fallbackPersona: GeneratedPersona = {
+      name: extractName(accountData),
+      profession: extractProfession(accountData),
+      languages: extractLanguages(accountData),
+      interests: extractInterests(accountData),
+      currentGoals: generateGoals(accountData, focusAreas),
+      communicationStyle: {
+        formality: 'casual',
+        verbosity: 'concise',
+        technicalLevel: 'advanced'
+      },
+      workingHours: 'Flexible',
+      preferences: {
+        codeStyle: 'Clean and maintainable',
+        customContext: customInstructions,
+      }
+    }
+
+    return fallbackPersona
+  }
 }
 
 function extractName(data: ConnectedAccountData): string {
@@ -160,10 +221,6 @@ function generateGoals(
   }
 
   // Add goals based on detected patterns
-  if (data.youtube?.watchHistory?.some(h => h.includes('tutorial'))) {
-    goals.push('Complete online courses and certifications')
-  }
-
   if (data.linkedin?.skills?.includes('leadership')) {
     goals.push('Mentor team members and share knowledge')
   }

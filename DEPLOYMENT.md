@@ -75,39 +75,44 @@ CREATE TRIGGER on_auth_user_created
    - Enable Email/Password
    - (Optional) Enable Google and GitHub OAuth
 
-### 4. Deploy to Cloudflare Pages
+### 4. Deploy to Cloudflare Workers (Updated 2025-10-18)
 
-#### First-time setup:
+#### Current Deployment Method (OpenNext)
+We use `@opennextjs/cloudflare` to deploy Next.js 15 to Cloudflare Workers:
+
 ```bash
-# Login to Cloudflare
+# Login to Cloudflare (first time only)
 wrangler login
 
-# Build the project for Cloudflare
-pnpm cf:build
-
-# Deploy to Cloudflare Pages
-wrangler pages deploy .vercel/output/static
-
-# Follow the prompts to:
-# 1. Name your project (e.g., "twin-app")
-# 2. Select production branch
+# Build and deploy in one command
+npx @opennextjs/cloudflare build && npx @opennextjs/cloudflare deploy
 ```
 
 #### Set environment variables in Cloudflare:
-1. Go to Cloudflare Dashboard → Pages → Your Project → Settings → Environment Variables
-2. Add the following variables:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `NEXT_PUBLIC_APP_URL` (set to your Cloudflare Pages URL)
-
-#### Subsequent deployments:
+Use `wrangler secret` for sensitive keys:
 ```bash
-# Deploy to staging
-pnpm deploy:staging
-
-# Deploy to production
-pnpm deploy:production
+wrangler secret put GOOGLE_CLIENT_ID
+wrangler secret put GOOGLE_CLIENT_SECRET
+wrangler secret put GOOGLE_API_KEY
+wrangler secret put GEMINI_API_KEY
+wrangler secret put MCP_ADMIN_API_KEY
 ```
+
+Public variables are in `wrangler.toml` under `[vars]`:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_APP_URL`
+- `YOUTUBE_REDIRECT_URI`
+- `MCP_SERVER_URL`
+
+#### Current Production URL
+https://twin.erniesg.workers.dev
+
+#### Recent Deployments
+- 2025-10-18: Version `a9321d52-e64c-41f5-9171-1a98336071ba`
+  - Fixed email vs user_id schema mismatch
+  - MCP persona generation integrated
+  - Custom goals feature added
 
 ### 5. Custom Domain (Optional)
 
@@ -135,44 +140,69 @@ pnpm deploy:production
                     └──────────────┘
 ```
 
-## Features Status
+## Features Status (Updated 2025-10-18)
 
 ### ✅ Working Now
 - User signup/login with Supabase Auth
 - Protected routes and middleware
 - Landing page with feature overview
-- OAuth connection UI (mocked)
-- Persona generation with custom instructions
+- **YouTube OAuth integration** (working - fetches subscriptions, playlists, likes)
+- **MCP server persona generation** (integrated at `twin-mcp-persona.erniesg.workers.dev`)
+- Improved focus areas with 10 categorized options (Career, Skills, Personal, Productivity)
+- Custom goal input system (users can add "Dating & Relationships", etc.)
+- Persona generation from real YouTube data
 - Persona review and editing
 - Dashboard with persona display
+- Deployed to Cloudflare Workers at `twin.erniesg.workers.dev`
+
+### ✅ Recent Updates (2025-10-18)
+- **Phase 1**: Connected MCP server for AI persona generation
+  - Modified `lib/persona/generator.ts` to use real MCP API calls
+  - Full YouTube data objects passed to MCP (not just strings)
+  - Fallback to mock if MCP fails
+  - Added console logging for debugging
+
+- **Phase 2+3**: Enhanced focus areas and custom goals
+  - Replaced overlapping focus areas with organized categories
+  - Added emoji icons for better UX
+  - Implemented custom goal input with badges
+  - Combined pre-defined + custom goals for persona generation
+
+- **Bug Fixes**:
+  - Fixed TypeScript errors in persona generator
+  - Fixed schema mismatch (email vs user_id in YouTube data lookup)
+  - Removed deprecated `watchHistory` references
 
 ### 🚧 Coming Soon
-- Real OAuth connections (YouTube, Gmail, LinkedIn)
+- Real OAuth for Gmail and LinkedIn
 - Memory CRUD operations
-- AI-powered persona generation from real data
 - Export/import functionality
 - Multi-LLM support
+- End-to-end testing with authenticated users
 
-## Development Commands
+## Development Commands (Updated 2025-10-18)
 
 ```bash
 # Local development
 pnpm dev
 
-# Run with mock data (no external services needed)
-NEXT_PUBLIC_USE_MOCK=true pnpm dev
-
-# Build for production
+# Build for production (Next.js)
 pnpm build
 
-# Deploy to Cloudflare
-pnpm cf:deploy
+# Build for Cloudflare Workers (OpenNext)
+npx @opennextjs/cloudflare build
 
-# Deploy to staging
-pnpm deploy:staging
+# Deploy to Cloudflare Workers
+npx @opennextjs/cloudflare deploy
 
-# Deploy to production
-pnpm deploy:production
+# Build and deploy together
+npx @opennextjs/cloudflare build && npx @opennextjs/cloudflare deploy
+
+# Check YouTube data
+curl "https://twin.erniesg.workers.dev/api/youtube/data?email=YOUR_EMAIL"
+
+# Monitor live deployment (requires separate terminal)
+wrangler tail twin --format pretty
 ```
 
 ## Troubleshooting
@@ -289,9 +319,185 @@ compatibility_flags = ["nodejs_compat"]
 - [Cloudflare Secrets](https://developers.cloudflare.com/workers/configuration/secrets/)
 - [Supabase + Cloudflare Workers](https://supabase.com/partners/integrations/cloudflare-workers)
 
+## Next Steps - Development Roadmap (2025-10-18)
+
+### 🎯 Immediate Priorities (Next 1-2 Weeks)
+
+#### 1. End-to-End Testing with Real Users
+- [ ] Create test account with `icicle.sky@gmail.com` in Supabase
+- [ ] Complete full onboarding flow: YouTube OAuth → Generate Persona → Review
+- [ ] Test MCP server persona generation with real YouTube data (16 subs, 2 playlists, 10 likes)
+- [ ] Verify persona storage in Supabase `user_personas` table
+- [ ] Test custom goals feature ("Dating & Relationships", "Cooking", etc.)
+- [ ] Monitor Cloudflare Workers logs during test: `wrangler tail twin --format pretty`
+
+#### 2. Error Handling & UX Improvements
+- [ ] Add loading states to persona generation page
+- [ ] Add error messages for MCP server failures
+- [ ] Add retry logic for failed persona generation
+- [ ] Add success animations/feedback after persona generation
+- [ ] Add ability to regenerate persona with different focus areas
+- [ ] Add "Save Draft" functionality for incomplete personas
+
+#### 3. Persona Review Page Enhancements
+- [ ] Display generated persona in readable format
+- [ ] Add edit capabilities for each persona field
+- [ ] Show which YouTube channels influenced the persona
+- [ ] Add "Regenerate" button to try again with new settings
+- [ ] Add export functionality (JSON, PDF)
+
+### 🔧 Backend & Integration Work
+
+#### 4. MCP Server Robustness
+- [ ] Add detailed error logging for MCP calls
+- [ ] Implement circuit breaker pattern for MCP failures
+- [ ] Add MCP response validation
+- [ ] Create unit tests for `lib/persona/generator.ts`
+- [ ] Add integration tests for MCP client
+- [ ] Document MCP API response format
+
+#### 5. Database & Schema Improvements
+- [ ] Add indexes for common queries on `user_personas` table
+- [ ] Consider merging `user_youtube_data.email` with `auth.users.id`
+- [ ] Add `last_generated_at` timestamp to track regeneration frequency
+- [ ] Add `generation_version` to track schema changes over time
+- [ ] Implement soft deletes for personas (instead of hard delete)
+
+#### 6. OAuth Integration Expansion
+- [ ] Implement Gmail OAuth flow (similar to YouTube)
+- [ ] Add LinkedIn OAuth integration
+- [ ] Create unified OAuth callback handler
+- [ ] Store OAuth refresh tokens securely (Cloudflare KV?)
+- [ ] Add token refresh logic before API calls
+- [ ] Add "Disconnect" functionality for each OAuth provider
+
+### 🎨 Frontend & UX Features
+
+#### 7. Dashboard Improvements
+- [ ] Display persona summary on dashboard
+- [ ] Show persona generation date and freshness
+- [ ] Add "Connected Accounts" widget showing OAuth status
+- [ ] Add quick regeneration CTA if persona is >30 days old
+- [ ] Add persona comparison view (before/after edits)
+
+#### 8. Onboarding Flow Polish
+- [ ] Add progress indicator (Step 1 of 3, etc.)
+- [ ] Add skip functionality for optional steps
+- [ ] Add "Why do we need this?" tooltips
+- [ ] Add preview of what persona will look like
+- [ ] Add onboarding completion celebration animation
+
+#### 9. Focus Areas & Goals Enhancement
+- [ ] Add search/filter for focus areas
+- [ ] Add popular custom goals suggestions
+- [ ] Track which focus areas users select most
+- [ ] Add "Quick Start" templates (Developer, Designer, Student, etc.)
+- [ ] Save focus area preferences for future regenerations
+
+### 📊 Analytics & Monitoring
+
+#### 10. Telemetry & Observability
+- [ ] Add Cloudflare Analytics integration
+- [ ] Track persona generation success/failure rates
+- [ ] Monitor MCP server response times
+- [ ] Track which focus areas are most popular
+- [ ] Track custom goals users add
+- [ ] Add error tracking (Sentry or similar)
+
+#### 11. Performance Monitoring
+- [ ] Measure time-to-generate for personas
+- [ ] Track YouTube API rate limits
+- [ ] Monitor Cloudflare Workers CPU/memory usage
+- [ ] Add performance budgets for page loads
+- [ ] Optimize bundle size (currently 106 kB First Load JS)
+
+### 🔒 Security & Compliance
+
+#### 12. Security Hardening
+- [ ] Review and test Row Level Security policies
+- [ ] Implement rate limiting for persona generation (prevent spam)
+- [ ] Add CSRF protection for OAuth callbacks
+- [ ] Audit all API endpoints for authorization checks
+- [ ] Add input validation for custom goals (prevent XSS)
+- [ ] Implement content security policy headers
+
+#### 13. Privacy & Data Management
+- [ ] Add data export functionality (GDPR compliance)
+- [ ] Add data deletion functionality
+- [ ] Add privacy policy page
+- [ ] Add terms of service page
+- [ ] Document data retention policies
+- [ ] Add user consent management
+
+### 📝 Documentation & Testing
+
+#### 14. Documentation
+- [ ] Write API documentation for all endpoints
+- [ ] Document MCP server integration
+- [ ] Create architecture diagram showing data flow
+- [ ] Write user guide for onboarding process
+- [ ] Document deployment process for new developers
+- [ ] Create troubleshooting guide
+
+#### 15. Testing Strategy
+- [ ] Write unit tests for persona generator
+- [ ] Write integration tests for OAuth flow
+- [ ] Add E2E tests with Playwright
+- [ ] Set up CI/CD pipeline
+- [ ] Add pre-commit hooks for linting/testing
+- [ ] Set up staging environment
+
+### 🚀 Advanced Features (Future)
+
+#### 16. AI Enhancement
+- [ ] Allow users to chat with their persona
+- [ ] Add persona tuning based on user feedback
+- [ ] Implement multi-modal persona (text + voice)
+- [ ] Add persona evolution over time
+- [ ] Create persona diff view to see changes
+
+#### 17. Multi-LLM Support
+- [ ] Add provider selection (OpenAI, Anthropic, Gemini)
+- [ ] Store provider preferences in user settings
+- [ ] A/B test different providers for quality
+- [ ] Add cost tracking per provider
+
+---
+
+## Current Technical Debt
+
+### High Priority
+1. **Auth vs Email Inconsistency**: YouTube data stored by email, but personas query by user_id
+   - **Fix**: Either migrate YouTube data to use user_id or keep email-based lookup
+   - **Impact**: Blocks persona generation if user email changes
+
+2. **No Error Recovery**: If MCP fails, user sees generic error
+   - **Fix**: Add specific error messages and retry UI
+   - **Impact**: Poor UX for intermittent failures
+
+3. **No Loading States**: Persona generation takes time but no feedback
+   - **Fix**: Add progress indicators and estimated time
+   - **Impact**: Users think the app is broken
+
+### Medium Priority
+4. **No Tests**: Persona generation has no automated tests
+   - **Fix**: Add unit + integration tests
+   - **Impact**: Regressions are hard to catch
+
+5. **Bundle Size**: 106 kB First Load JS is large
+   - **Fix**: Code splitting, lazy loading
+   - **Impact**: Slow initial page load
+
+6. **No Monitoring**: Can't see errors in production
+   - **Fix**: Add Sentry or similar
+   - **Impact**: Hard to debug production issues
+
+---
+
 ## Support
 
 For issues or questions:
 - Check the [INIT.md](./INIT.md) file for detailed development guide
 - Review the example environment file: `.env.local.example`
-- Test with mock mode first: `NEXT_PUBLIC_USE_MOCK=true pnpm dev`
+- See this comprehensive roadmap for planned features
+- Monitor live deployments: `wrangler tail twin --format pretty`
