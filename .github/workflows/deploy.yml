@@ -32,7 +32,7 @@ jobs:
         run: pnpm build
 
       - name: Build for Cloudflare
-        run: npx @opennextjs/cloudflare build
+        run: echo "n" | npx @opennextjs/cloudflare build || npx @opennextjs/cloudflare build --skip-prompts || npx @opennextjs/cloudflare build
 
       - name: Deploy to Cloudflare Workers
         env:
