@@ -41,10 +41,9 @@ export default {
             result: {
               protocolVersion: '2024-11-05',
               capabilities: {
-                tools: {},
-                resources: {},
-                prompts: {},
-                logging: {}
+                tools: {}
+                // Only declare capabilities we actually implement
+                // Removed: resources, prompts, logging (not implemented yet)
               },
               serverInfo: {
                 name: 'twin-mcp-persona',
