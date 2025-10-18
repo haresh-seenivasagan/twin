@@ -7,25 +7,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
-  const request = req;
-  const searchParams = request.nextUrl.searchParams
-  const email = searchParams.get('email')
-  const maxResults = parseInt(searchParams.get('maxResults') || '50')
+  // Use req.query for query parameters
+  const email = req.query.email as string | undefined
+  const maxResults = parseInt((req.query.maxResults as string) || '50')
 
   if (!email) {
-    return res.status(200).json(
-      { error: 'Email parameter required' },
-      { status: 400 }
-    )
+    return res.status(400).json({ error: 'Email parameter required' })
   }
 
   const tokenData = getToken(email)
 
   if (!tokenData) {
-    return res.status(200).json(
-      { error: 'User not authenticated. Please login first.' },
-      { status: 401 }
-    )
+    return res.status(401).json({ error: 'User not authenticated. Please login first.' })
   }
 
   try {
@@ -39,9 +32,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
   } catch (error) {
     console.error('Failed to fetch subscriptions:', error)
-    return res.status(200).json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch subscriptions' },
-      { status: 500 }
-    )
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to fetch subscriptions' })
   }
 }

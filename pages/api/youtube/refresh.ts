@@ -19,10 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      return res.status(200).json(
-        { error: 'User not authenticated' },
-        { status: 401 }
-      )
+      return res.status(401).json({ error: 'User not authenticated' })
     }
 
     // Get stored YouTube token
@@ -33,10 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single()
 
     if (tokenError || !tokenData) {
-      return res.status(200).json(
-        { error: 'No YouTube token found. Please connect your YouTube account first.' },
-        { status: 400 }
-      )
+      return res.status(400).json({ error: 'No YouTube token found. Please connect your YouTube account first.' })
     }
 
     // Check if token is expired
@@ -44,10 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const now = new Date()
 
     if (expiresAt < now) {
-      return res.status(200).json(
-        { error: 'YouTube token expired. Please reconnect your YouTube account.' },
-        { status: 401 }
-      )
+      return res.status(401).json({ error: 'YouTube token expired. Please reconnect your YouTube account.' })
     }
 
     // Fetch fresh YouTube data
@@ -97,9 +88,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
   } catch (error) {
     console.error('YouTube refresh error:', error)
-    return res.status(200).json(
-      { error: error instanceof Error ? error.message : 'Failed to refresh YouTube data' },
-      { status: 500 }
-    )
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to refresh YouTube data' })
   }
 }

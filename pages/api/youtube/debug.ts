@@ -18,10 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      return res.status(200).json(
-        { error: 'User not authenticated' },
-        { status: 401 }
-      )
+      return res.status(401).json({ error: 'User not authenticated' })
     }
 
     // Get YouTube data from Supabase
@@ -76,16 +73,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           '/api/youtube/refresh': 'Re-fetch YouTube data',
         },
       },
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
     })
   } catch (error) {
     console.error('Debug endpoint error:', error)
-    return res.status(200).json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
   }
 }

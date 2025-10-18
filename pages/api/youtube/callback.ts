@@ -12,22 +12,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
-  const request = req;
-  const searchParams = request.nextUrl.searchParams
-  const code = searchParams.get('code')
+  const code = req.query.code as string | undefined
 
   if (!code) {
-    return res.status(200).json(
-      { error: 'No authorization code provided' },
-      { status: 400 }
-    )
+    return res.status(400).json({ error: 'No authorization code provided' })
   }
 
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-    return res.status(200).json(
-      { error: 'OAuth credentials not configured' },
-      { status: 500 }
-    )
+    return res.status(500).json({ error: 'OAuth credentials not configured' })
   }
 
   try {
@@ -120,7 +112,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Redirect to onboarding/generate page with success
-    const redirectUrl = new URL('/onboarding/generate', request.nextUrl.origin)
+    const protocol = req.headers['x-forwarded-proto'] || 'http'
+    const host = req.headers.host || 'localhost:3000'
+    const origin = `${protocol}://${host}`
+    const redirectUrl = new URL('/onboarding/generate', origin)
     redirectUrl.searchParams.set('youtube', 'connected')
 
     return res.redirect(307, redirectUrl.toString())
@@ -128,7 +123,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('YouTube OAuth callback error:', error)
 
     // Redirect to onboarding/connect with error
-    const redirectUrl = new URL('/onboarding/connect', request.nextUrl.origin)
+    const protocol = req.headers['x-forwarded-proto'] || 'http'
+    const host = req.headers.host || 'localhost:3000'
+    const origin = `${protocol}://${host}`
+    const redirectUrl = new URL('/onboarding/connect', origin)
     redirectUrl.searchParams.set('error', 'youtube_auth_failed')
 
     return res.redirect(307, redirectUrl.toString())

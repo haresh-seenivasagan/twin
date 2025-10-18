@@ -7,27 +7,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'PUT') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
-  const request = req;
   try {
     // Get authenticated user
     const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      return res.status(200).json(
-        { error: 'User not authenticated' },
-        { status: 401 }
-      )
+      return res.status(401).json({ error: 'User not authenticated' })
     }
 
     // Parse request body
-    const { persona } = await request.json()
+    const { persona } = req.body
 
     if (!persona) {
-      return res.status(200).json(
-        { error: 'Persona data is required' },
-        { status: 400 }
-      )
+      return res.status(400).json({ error: 'Persona data is required' })
     }
 
     // Update persona in Supabase
@@ -58,9 +51,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
   } catch (error) {
     console.error('Persona update error:', error)
-    return res.status(200).json(
-      { error: error instanceof Error ? error.message : 'Failed to update persona' },
-      { status: 500 }
-    )
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to update persona' })
   }
 }

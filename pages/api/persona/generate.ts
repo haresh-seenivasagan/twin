@@ -21,171 +21,139 @@ interface GeneratePersonaOptions {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-  const request = req;
-  try {
-    // Get authenticated user
-    const supabase = await createClient()
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !user) {
-      return res.status(200).json(
-        { error: 'User not authenticated' },
-        { status: 401 }
-      )
-    }
-
-    // Parse request body
-    const body: GeneratePersonaOptions = await request.json()
-    const { focusAreas, customInstructions } = body
-
-    // Get YouTube data from Supabase
-    const { data: personaData, error: fetchError } = await supabase
-      .from('user_personas')
-      .select('youtube_data')
-      .eq('user_id', user.id)
-      .single()
-
-    if (fetchError || !personaData?.youtube_data) {
-      return res.status(200).json(
-        { error: 'No YouTube data found. Please connect your YouTube account first.' },
-        { status: 400 }
-      )
-    }
-
-    const youtubeData = personaData.youtube_data
-
-    // Call MCP server to generate persona
-    const mcpRequest: MCPRequest = {
-      jsonrpc: '2.0',
-      method: 'tools/call',
-      params: {
-        name: 'persona.generate',
-        arguments: {
-          accounts: {
-            youtube: {
-              subscriptions: youtubeData.subscriptions,
-              likedVideos: youtubeData.likedVideos,
-              playlists: youtubeData.playlists,
-            },
-          },
-          focusAreas,
-          customInstructions,
-        },
-      },
-      id: 1,
-    }
-
-    const mcpResponse = await fetch(MCP_SERVER_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(mcpRequest),
-    })
-
-    if (!mcpResponse.ok) {
-      throw new Error(`MCP server error: ${mcpResponse.statusText}`)
-    }
-
-    const mcpResult = await mcpResponse.json()
-
-    // Extract persona from MCP response
-    // MCP response format: { jsonrpc: "2.0", result: { content: [...] }, id: 1 }
-    const personaContent = mcpResult.result?.content?.[0]?.text
-
-    if (!personaContent) {
-      throw new Error('Invalid MCP response format')
-    }
-
-    // Parse the generated persona (assuming it's JSON)
-    let generatedPersona
+  // Handle POST - Generate persona
+  if (req.method === 'POST') {
     try {
-      generatedPersona = JSON.parse(personaContent)
-    } catch {
-      // If not JSON, wrap in a basic structure
-      generatedPersona = {
-        name: user.email?.split('@')[0] || 'User',
-        description: personaContent,
-        generatedAt: new Date().toISOString(),
+      const supabase = await createClient()
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+      if (userError || !user) {
+        return res.status(401).json({ error: 'User not authenticated' })
       }
-    }
 
-    // Update Supabase with generated persona
-    const { error: updateError } = await supabase
-      .from('user_personas')
-      .update({
-        persona: generatedPersona,
-        focus_areas: focusAreas || [],
-        custom_instructions: customInstructions || null,
-        updated_at: new Date().toISOString(),
+      const body: GeneratePersonaOptions = req.body
+      const { focusAreas, customInstructions } = body
+
+      const { data: personaData, error: fetchError } = await supabase
+        .from('user_personas')
+        .select('youtube_data')
+        .eq('user_id', user.id)
+        .single()
+
+      if (fetchError || !personaData?.youtube_data) {
+        return res.status(400).json({ error: 'No YouTube data found. Please connect your YouTube account first.' })
+      }
+
+      const youtubeData = personaData.youtube_data
+
+      const mcpRequest: MCPRequest = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        params: {
+          name: 'persona.generate',
+          arguments: {
+            accounts: {
+              youtube: {
+                subscriptions: youtubeData.subscriptions,
+                likedVideos: youtubeData.likedVideos,
+                playlists: youtubeData.playlists,
+              },
+            },
+            focusAreas,
+            customInstructions,
+          },
+        },
+        id: 1,
+      }
+
+      const mcpResponse = await fetch(MCP_SERVER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(mcpRequest),
       })
-      .eq('user_id', user.id)
 
-    if (updateError) {
-      console.error('Failed to save persona:', updateError)
-      throw new Error('Failed to save generated persona')
+      if (!mcpResponse.ok) {
+        throw new Error(`MCP server error: ${mcpResponse.statusText}`)
+      }
+
+      const mcpResult = await mcpResponse.json()
+      const personaContent = mcpResult.result?.content?.[0]?.text
+
+      if (!personaContent) {
+        throw new Error('Invalid MCP response format')
+      }
+
+      let generatedPersona
+      try {
+        generatedPersona = JSON.parse(personaContent)
+      } catch {
+        generatedPersona = {
+          name: user.email?.split('@')[0] || 'User',
+          description: personaContent,
+          generatedAt: new Date().toISOString(),
+        }
+      }
+
+      const { error: updateError } = await supabase
+        .from('user_personas')
+        .update({
+          persona: generatedPersona,
+          focus_areas: focusAreas || [],
+          custom_instructions: customInstructions || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id)
+
+      if (updateError) {
+        console.error('Failed to save persona:', updateError)
+        throw new Error('Failed to save generated persona')
+      }
+
+      return res.status(200).json({
+        success: true,
+        persona: generatedPersona,
+      })
+    } catch (error) {
+      console.error('Persona generation error:', error)
+      return res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to generate persona' })
     }
-
-    return res.status(200).json({
-      success: true,
-      persona: generatedPersona,
-    })
-  } catch (error) {
-    console.error('Persona generation error:', error)
-    return res.status(200).json(
-      { error: error instanceof Error ? error.message : 'Failed to generate persona' },
-      { status: 500 }
-    )
   }
-}
 
-// GET endpoint to retrieve current persona
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-  const request = req;
-  try {
-    // Get authenticated user
-    const supabase = await createClient()
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+  // Handle GET - Retrieve current persona
+  if (req.method === 'GET') {
+    try {
+      const supabase = await createClient()
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    if (userError || !user) {
-      return res.status(200).json(
-        { error: 'User not authenticated' },
-        { status: 401 }
-      )
+      if (userError || !user) {
+        return res.status(401).json({ error: 'User not authenticated' })
+      }
+
+      const { data: personaData, error: fetchError } = await supabase
+        .from('user_personas')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      if (fetchError) {
+        return res.status(404).json({ error: 'No persona found' })
+      }
+
+      return res.status(200).json({
+        success: true,
+        persona: personaData.persona,
+        youtubeData: personaData.youtube_data,
+        focusAreas: personaData.focus_areas,
+        customInstructions: personaData.custom_instructions,
+      })
+    } catch (error) {
+      console.error('Error fetching persona:', error)
+      return res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to fetch persona' })
     }
-
-    // Get persona from Supabase
-    const { data: personaData, error: fetchError } = await supabase
-      .from('user_personas')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
-
-    if (fetchError) {
-      return res.status(200).json(
-        { error: 'No persona found' },
-        { status: 404 }
-      )
-    }
-
-    return res.status(200).json({
-      success: true,
-      persona: personaData.persona,
-      youtubeData: personaData.youtube_data,
-      focusAreas: personaData.focus_areas,
-      customInstructions: personaData.custom_instructions,
-    })
-  } catch (error) {
-    console.error('Error fetching persona:', error)
-    return res.status(200).json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch persona' },
-      { status: 500 }
-    )
   }
+
+  // Method not allowed
+  return res.status(405).json({ error: 'Method not allowed' })
 }

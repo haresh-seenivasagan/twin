@@ -51,6 +51,8 @@ function ConnectAccountsContent() {
 
   // Check for OAuth callback success/error
   useEffect(() => {
+    if (!searchParams) return
+
     const youtubeConnected = searchParams.get('youtube')
     const email = searchParams.get('email')
     const errorParam = searchParams.get('error')
