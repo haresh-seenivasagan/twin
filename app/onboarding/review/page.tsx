@@ -3,12 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Brain, Plus, X, Save, ChevronLeft, Check } from 'lucide-react'
+import { Brain, Save, ChevronLeft, Check } from 'lucide-react'
 import type { GeneratedPersona } from '@/lib/persona/generator'
+import { PersonaEditor } from '@/components/persona/PersonaEditor'
+import { DebugPanel } from '@/components/debug/DebugPanel'
 
 export default function ReviewPersonaPage() {
   const router = useRouter()
@@ -74,40 +72,6 @@ export default function ReviewPersonaPage() {
     }
   }
 
-  const updateField = (field: string, value: any) => {
-    if (!editedPersona) return
-
-    setEditedPersona(prev => ({
-      ...prev!,
-      [field]: value
-    }))
-  }
-
-  const updateNestedField = (parent: string, field: string, value: any) => {
-    if (!editedPersona) return
-
-    setEditedPersona(prev => ({
-      ...prev!,
-      [parent]: {
-        ...(prev![parent as keyof GeneratedPersona] as any),
-        [field]: value
-      }
-    }))
-  }
-
-  const addToArray = (field: string, value: string) => {
-    if (!editedPersona || !value.trim()) return
-
-    const currentArray = editedPersona[field as keyof GeneratedPersona] as string[]
-    updateField(field, [...currentArray, value.trim()])
-  }
-
-  const removeFromArray = (field: string, index: number) => {
-    if (!editedPersona) return
-
-    const currentArray = editedPersona[field as keyof GeneratedPersona] as string[]
-    updateField(field, currentArray.filter((_, i) => i !== index))
-  }
 
   if (!persona || !editedPersona) {
     return (
@@ -141,253 +105,27 @@ export default function ReviewPersonaPage() {
           </p>
         </div>
 
-        {/* Basic Information */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-            <CardDescription>
-              Your core identity information
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={editedPersona.name}
-                  onChange={(e) => updateField('name', e.target.value)}
-                  placeholder="Your name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="profession">Profession</Label>
-                <Input
-                  id="profession"
-                  value={editedPersona.profession}
-                  onChange={(e) => updateField('profession', e.target.value)}
-                  placeholder="Your profession"
-                />
-              </div>
-            </div>
+        {/* Persona Editor */}
+        <PersonaEditor
+          persona={editedPersona}
+          onUpdate={setEditedPersona}
+        />
 
-            <div>
-              <Label htmlFor="workingHours">Working Hours</Label>
-              <Input
-                id="workingHours"
-                value={editedPersona.workingHours || ''}
-                onChange={(e) => updateField('workingHours', e.target.value)}
-                placeholder="e.g., 9-5 PST, Flexible"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Languages */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Languages</CardTitle>
-            <CardDescription>
-              Languages you speak or work with
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {editedPersona.languages.map((lang, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-secondary rounded-full text-sm flex items-center gap-1"
-                  >
-                    {lang}
-                    <button
-                      onClick={() => removeFromArray('languages', index)}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add a language"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      addToArray('languages', (e.target as HTMLInputElement).value)
-                      ;(e.target as HTMLInputElement).value = ''
-                    }
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    const input = document.querySelector('input[placeholder="Add a language"]') as HTMLInputElement
-                    if (input?.value) {
-                      addToArray('languages', input.value)
-                      input.value = ''
-                    }
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Interests */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Interests</CardTitle>
-            <CardDescription>
-              Your areas of interest and expertise
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {editedPersona.interests.map((interest, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-secondary rounded-full text-sm flex items-center gap-1"
-                  >
-                    {interest}
-                    <button
-                      onClick={() => removeFromArray('interests', index)}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add an interest"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      addToArray('interests', (e.target as HTMLInputElement).value)
-                      ;(e.target as HTMLInputElement).value = ''
-                    }
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    const input = document.querySelector('input[placeholder="Add an interest"]') as HTMLInputElement
-                    if (input?.value) {
-                      addToArray('interests', input.value)
-                      input.value = ''
-                    }
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Current Goals */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Current Goals</CardTitle>
-            <CardDescription>
-              What you're currently working towards
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {editedPersona.currentGoals.map((goal, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    value={goal}
-                    onChange={(e) => {
-                      const newGoals = [...editedPersona.currentGoals]
-                      newGoals[index] = e.target.value
-                      updateField('currentGoals', newGoals)
-                    }}
-                    placeholder="Enter a goal"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeFromArray('currentGoals', index)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              <Button
-                variant="outline"
-                onClick={() => addToArray('currentGoals', 'New goal')}
-                className="w-full"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Goal
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Communication Style */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Communication Style</CardTitle>
-            <CardDescription>
-              How you prefer AI to communicate with you
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="formality">Formality</Label>
-                <select
-                  id="formality"
-                  value={editedPersona.communicationStyle.formality}
-                  onChange={(e) => updateNestedField('communicationStyle', 'formality', e.target.value)}
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                >
-                  <option value="formal">Formal</option>
-                  <option value="casual">Casual</option>
-                  <option value="mixed">Mixed</option>
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="verbosity">Verbosity</Label>
-                <select
-                  id="verbosity"
-                  value={editedPersona.communicationStyle.verbosity}
-                  onChange={(e) => updateNestedField('communicationStyle', 'verbosity', e.target.value)}
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                >
-                  <option value="concise">Concise</option>
-                  <option value="detailed">Detailed</option>
-                  <option value="balanced">Balanced</option>
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="technicalLevel">Technical Level</Label>
-                <select
-                  id="technicalLevel"
-                  value={editedPersona.communicationStyle.technicalLevel}
-                  onChange={(e) => updateNestedField('communicationStyle', 'technicalLevel', e.target.value)}
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                >
-                  <option value="basic">Basic</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Debug Panel */}
+        <div className="mt-6">
+          <DebugPanel
+            data={{
+              original: persona,
+              edited: editedPersona,
+              hasChanges: JSON.stringify(persona) !== JSON.stringify(editedPersona)
+            }}
+            title="Review Debug Data"
+            description="Compare original and edited persona data"
+          />
+        </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-between">
+        <div className="flex justify-between mt-6">
           <Button
             variant="outline"
             onClick={() => router.back()}

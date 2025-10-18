@@ -1,35 +1,159 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { signOut } from '@/app/actions/auth'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Brain, Plus, Settings, FileText, Sparkles, LogOut } from 'lucide-react'
+import { Brain, Plus, Settings, FileText, Sparkles, LogOut, Save, Check } from 'lucide-react'
 import Link from 'next/link'
+import type { GeneratedPersona } from '@/lib/persona/generator'
+import { PersonaEditor } from '@/components/persona/PersonaEditor'
+import { DebugPanel } from '@/components/debug/DebugPanel'
 
-export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function DashboardPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [persona, setPersona] = useState<GeneratedPersona | null>(null)
+  const [editedPersona, setEditedPersona] = useState<GeneratedPersona | null>(null)
+  const [youtubeData, setYoutubeData] = useState<any>(null)
+  const [personaRecord, setPersonaRecord] = useState<any>(null)
 
-  if (!user) {
-    redirect('/login')
+  useEffect(() => {
+    const fetchData = async () => {
+      console.log('[Dashboard] Starting data fetch')
+      const supabase = createClient()
+
+      // Get user
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      console.log('[Dashboard] User fetched:', currentUser?.id)
+
+      if (!currentUser) {
+        console.log('[Dashboard] No user found, redirecting to login')
+        router.push('/login')
+        return
+      }
+
+      setUser(currentUser)
+
+      // Get user persona from user_personas table
+      const { data: personaData, error: personaError } = await supabase
+        .from('user_personas')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .single()
+
+      console.log('[Dashboard] Persona record fetched:', {
+        found: !!personaData,
+        error: personaError?.message,
+        hasPersonaData: personaData?.persona && Object.keys(personaData.persona).length > 0
+      })
+
+      if (personaError) {
+        console.error('[Dashboard] Error fetching persona:', personaError)
+      }
+
+      setPersonaRecord(personaData)
+
+      // Check if user has completed onboarding
+      const hasPersona = personaData?.persona && Object.keys(personaData.persona).length > 0
+
+      if (!hasPersona) {
+        console.log('[Dashboard] No persona found, redirecting to onboarding')
+        router.push('/onboarding/connect')
+        return
+      }
+
+      setPersona(personaData.persona)
+      setEditedPersona(personaData.persona)
+
+      // Check for connected accounts (YouTube data)
+      const { data: ytData, error: ytError } = await supabase
+        .from('user_youtube_data')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .single()
+
+      console.log('[Dashboard] YouTube data fetched:', {
+        found: !!ytData,
+        error: ytError?.message,
+        subscriptionCount: ytData?.subscriptions?.length || 0
+      })
+
+      setYoutubeData(ytData)
+      setLoading(false)
+    }
+
+    fetchData()
+  }, [router])
+
+  const handleSave = async () => {
+    if (!editedPersona) return
+
+    console.log('[Dashboard] Saving persona updates')
+    setSaving(true)
+
+    try {
+      const supabase = createClient()
+
+      // Save the edited persona
+      const { error } = await supabase
+        .from('user_personas')
+        .update({
+          persona: editedPersona,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+
+      if (error) {
+        console.error('[Dashboard] Error saving persona:', error)
+        throw error
+      }
+
+      // Also update auth.user_metadata with preferred name
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          preferred_name: editedPersona.name,
+        }
+      })
+
+      if (authError) {
+        console.error('[Dashboard] Error updating user metadata:', authError)
+      }
+
+      console.log('[Dashboard] Persona saved successfully')
+      setPersona(editedPersona)
+      alert('Persona updated successfully!')
+    } catch (error) {
+      console.error('[Dashboard] Save failed:', error)
+      alert('Failed to save persona. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  // Get user persona from user_personas table
-  const { data: personaRecord } = await supabase
-    .from('user_personas')
-    .select('*')
-    .eq('user_id', user.id)
-    .single()
-
-  // Check if user has completed onboarding
-  const hasPersona = personaRecord?.persona && Object.keys(personaRecord.persona).length > 0
-
-  if (!hasPersona) {
-    redirect('/onboarding/connect')
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
   }
 
-  // Use persona from user_personas table
-  const persona = personaRecord?.persona
+  const hasChanges = persona && editedPersona && JSON.stringify(persona) !== JSON.stringify(editedPersona)
+  const connectedAccountsCount = youtubeData ? 1 : 0
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (!persona || !editedPersona) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,11 +170,9 @@ export default async function DashboardPage() {
                 <Settings className="h-5 w-5" />
               </Button>
             </Link>
-            <form action={signOut}>
-              <Button variant="ghost" size="icon" type="submit">
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </form>
+            <Button variant="ghost" size="icon" onClick={handleSignOut}>
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </nav>
@@ -58,7 +180,7 @@ export default async function DashboardPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Welcome back, {persona?.name || user.email}</h1>
+          <h1 className="text-3xl font-bold">Welcome back, {editedPersona.name || user.email}</h1>
           <p className="text-muted-foreground mt-2">
             Manage your AI persona and memories from your dashboard
           </p>
@@ -76,7 +198,7 @@ export default async function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">1</div>
               <p className="text-xs text-muted-foreground">
-                {persona?.name || 'Default'}
+                {editedPersona.name || 'Default'}
               </p>
             </CardContent>
           </Card>
@@ -104,7 +226,7 @@ export default async function DashboardPage() {
               <Sparkles className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{connectedAccountsCount}</div>
               <p className="text-xs text-muted-foreground">
                 Active connections
               </p>
@@ -120,7 +242,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {persona?.currentGoals?.length || 0}
+                {editedPersona.currentGoals?.length || 0}
               </div>
               <p className="text-xs text-muted-foreground">
                 Active goals
@@ -129,25 +251,50 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Edit Persona</CardTitle>
-              <CardDescription>
-                Update your interests, goals, and preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/persona/edit">
-                <Button className="w-full">
-                  <Brain className="mr-2 h-4 w-4" />
-                  Edit Persona
-                </Button>
-              </Link>
+        {/* Save Changes Button (shows when there are changes) */}
+        {hasChanges && (
+          <Card className="mb-6 border-primary">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">You have unsaved changes</p>
+                  <p className="text-sm text-muted-foreground">
+                    Click save to update your persona
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setEditedPersona(persona)}
+                    disabled={saving}
+                  >
+                    Discard
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="min-w-[120px]"
+                  >
+                    {saving ? (
+                      <>
+                        <Save className="mr-2 h-4 w-4 animate-pulse" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
+        )}
 
+        {/* Quick Actions */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
           <Card>
             <CardHeader>
               <CardTitle>Manage Memories</CardTitle>
@@ -181,43 +328,67 @@ export default async function DashboardPage() {
               </Link>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Current Persona Display */}
-        {persona && (
-          <Card className="mt-8">
+          <Card>
             <CardHeader>
-              <CardTitle>Your Current Persona</CardTitle>
+              <CardTitle>Regenerate Persona</CardTitle>
               <CardDescription>
-                This is how AI systems will understand and remember you
+                Create a new persona from your connected data
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <span className="font-semibold">Name:</span> {persona.name || 'Not set'}
-                </div>
-                <div>
-                  <span className="font-semibold">Profession:</span> {persona.profession || 'Not set'}
-                </div>
-                <div>
-                  <span className="font-semibold">Languages:</span> {persona.languages?.join(', ') || 'Not set'}
-                </div>
-                <div>
-                  <span className="font-semibold">Interests:</span> {persona.interests?.join(', ') || 'Not set'}
-                </div>
-                <div>
-                  <span className="font-semibold">Current Goals:</span>
-                  <ul className="list-disc list-inside mt-1">
-                    {persona.currentGoals?.map((goal: string, index: number) => (
-                      <li key={index}>{goal}</li>
-                    )) || <li>No goals set</li>}
-                  </ul>
-                </div>
-              </div>
+              <Link href="/onboarding/generate">
+                <Button className="w-full" variant="outline">
+                  <Brain className="mr-2 h-4 w-4" />
+                  Regenerate
+                </Button>
+              </Link>
             </CardContent>
           </Card>
-        )}
+        </div>
+
+        {/* Persona Editor */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-4">Edit Your Persona</h2>
+          <p className="text-muted-foreground mb-6">
+            Update your persona details below. Changes are saved when you click the Save button.
+          </p>
+          <PersonaEditor
+            persona={editedPersona}
+            onUpdate={setEditedPersona}
+          />
+        </div>
+
+        {/* Debug Panel */}
+        <div className="mt-6">
+          <DebugPanel
+            data={{
+              user: {
+                id: user.id,
+                email: user.email,
+                metadata: user.user_metadata
+              },
+              personaRecord: {
+                id: personaRecord?.id,
+                created_at: personaRecord?.created_at,
+                updated_at: personaRecord?.updated_at
+              },
+              youtubeData: youtubeData ? {
+                hasData: true,
+                subscriptionCount: youtubeData.subscriptions?.length || 0,
+                playlistCount: youtubeData.playlists?.length || 0,
+                likesCount: youtubeData.liked_videos?.length || 0
+              } : null,
+              persona: {
+                original: persona,
+                edited: editedPersona,
+                hasChanges
+              }
+            }}
+            title="Dashboard Debug Data"
+            description="User data, persona record, and YouTube connection status"
+          />
+        </div>
       </main>
     </div>
   )
