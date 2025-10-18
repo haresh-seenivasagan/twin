@@ -41,7 +41,10 @@ export default {
             result: {
               protocolVersion: '2024-11-05',
               capabilities: {
-                tools: {}
+                tools: {},
+                resources: {},
+                prompts: {},
+                logging: {}
               },
               serverInfo: {
                 name: 'twin-mcp-persona',
@@ -49,7 +52,21 @@ export default {
               }
             }
           }), {
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type'
+            }
+          });
+        }
+
+        // Handle initialized notification (client confirms initialization)
+        if (body.method === 'notifications/initialized' || body.method === 'initialized') {
+          // This is a notification, no response needed per JSON-RPC spec
+          return new Response(null, {
+            status: 204,
+            headers: { 'Access-Control-Allow-Origin': '*' }
           });
         }
 
