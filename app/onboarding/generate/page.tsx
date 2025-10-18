@@ -56,6 +56,7 @@ export default function GeneratePersonaPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Required to send Supabase auth cookies
         body: JSON.stringify({
           focusAreas: allFocusAreas,
           customInstructions: customInstructions || undefined,
