@@ -24,31 +24,33 @@ export default function GeneratePersonaPage() {
   const [customGoalInput, setCustomGoalInput] = useState('')
 
   const focusAreas = [
-    // Career & Work
-    { id: 'career', label: 'Career Advancement', icon: '📈', description: 'Promotions, job changes, leadership' },
-    { id: 'entrepreneurship', label: 'Entrepreneurship', icon: '💼', description: 'Starting or growing a business' },
-
-    // Skills & Learning
-    { id: 'technical', label: 'Technical & Programming', icon: '💻', description: 'Coding, frameworks, software engineering' },
-    { id: 'creative', label: 'Creative & Design', icon: '🎨', description: 'Art, design, content creation' },
-    { id: 'languages', label: 'Language Learning', icon: '🗣️', description: 'Learning new languages' },
-
-    // Personal Life
-    { id: 'health', label: 'Health & Fitness', icon: '💪', description: 'Exercise, nutrition, wellness' },
     { id: 'relationships', label: 'Dating & Relationships', icon: '❤️', description: 'Personal connections and dating' },
-    { id: 'hobbies', label: 'Hobbies & Interests', icon: '🎯', description: 'Personal projects and pastimes' },
-
-    // Productivity & Growth
-    { id: 'productivity', label: 'Time Management', icon: '⏰', description: 'Efficiency and organization' },
     { id: 'mindfulness', label: 'Mental Health', icon: '🧘', description: 'Mindfulness, therapy, self-care' },
+    { id: 'health', label: 'Health & Fitness', icon: '💪', description: 'Exercise, nutrition, wellness' },
+    { id: 'technical', label: 'Technical & Programming', icon: '💻', description: 'Coding, frameworks, software engineering' },
   ]
 
   const handleGenerate = async () => {
+    // Validation: Must select at least one focus area OR have custom goals
+    const allFocusAreas = [...selectedFocusAreas, ...customGoals]
+
+    if (allFocusAreas.length === 0) {
+      alert('Please select at least one focus area or add a custom goal')
+      return
+    }
+
+    // Validate custom goals are not empty strings
+    const validCustomGoals = customGoals.filter(g => g.trim().length > 0)
+    if (validCustomGoals.length < customGoals.length) {
+      alert('Please remove empty custom goals or fill them in')
+      return
+    }
+
     setGenerating(true)
 
     try {
-      // Combine pre-defined focus areas with custom goals
-      const allFocusAreas = [...selectedFocusAreas, ...customGoals]
+      // Combine pre-defined focus areas with valid custom goals
+      const finalFocusAreas = [...selectedFocusAreas, ...validCustomGoals]
 
       // Call the API to generate persona using MCP server
       const response = await fetch('/api/persona/generate', {
@@ -58,7 +60,7 @@ export default function GeneratePersonaPage() {
         },
         credentials: 'include', // Required to send Supabase auth cookies
         body: JSON.stringify({
-          focusAreas: allFocusAreas,
+          focusAreas: finalFocusAreas,
           customInstructions: customInstructions || undefined,
         }),
       })

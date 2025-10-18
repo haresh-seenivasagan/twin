@@ -27,11 +27,32 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const supabase = await createClient()
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
+  // Validate inputs
+  const name = formData.get('name') as string
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+
+  if (!name || name.trim().length < 2) {
+    return { error: 'Name must be at least 2 characters' }
+  }
+
+  if (!email || !email.includes('@')) {
+    return { error: 'Invalid email address' }
+  }
+
+  if (!password || password.length < 6) {
+    return { error: 'Password must be at least 6 characters' }
+  }
+
   const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
+    email,
+    password,
+    options: {
+      data: {
+        full_name: name.trim(),
+        preferred_name: name.trim(),
+      }
+    }
   }
 
   console.log('[AUTH] Attempting signup for:', data.email)

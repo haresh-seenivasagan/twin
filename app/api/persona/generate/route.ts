@@ -125,11 +125,15 @@ export async function POST(request: Request) {
       )
     }
 
+    // Get user's preferred name from auth metadata
+    const userName = user.user_metadata?.preferred_name || user.user_metadata?.full_name || user.email?.split('@')[0]
+
     // Generate persona using AI (or mock for now)
     const persona = await generatePersonaFromAccounts(
       accountData,
       custom_instructions,
-      focus_areas
+      focus_areas,
+      userName
     )
 
     console.log('Generated persona:', {

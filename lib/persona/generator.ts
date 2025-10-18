@@ -51,7 +51,8 @@ export interface GeneratedPersona {
 export async function generatePersonaFromAccounts(
   accountData: ConnectedAccountData,
   customInstructions?: string,
-  focusAreas?: string[]
+  focusAreas?: string[],
+  userName?: string
 ): Promise<GeneratedPersona> {
   const mcpClient = new MCPClient()
 
@@ -71,6 +72,11 @@ export async function generatePersonaFromAccounts(
 
     if (accountData.linkedin) {
       mcpAccountData.linkedin = accountData.linkedin
+    }
+
+    // Add user name if provided
+    if (userName) {
+      mcpAccountData.userName = userName
     }
 
     // Add focus areas and custom instructions to the account data
@@ -118,7 +124,7 @@ export async function generatePersonaFromAccounts(
       'intermediate'
 
     const generatedPersona: GeneratedPersona = {
-      name: mcpPersona.name || 'User',
+      name: mcpPersona.name || userName || 'User',
       profession: mcpPersona.profession || 'Professional',
       languages: mcpPersona.languages || ['English'],
       interests: mcpPersona.interests || [],
@@ -140,7 +146,7 @@ export async function generatePersonaFromAccounts(
 
     // Fallback to mock persona if MCP fails
     const fallbackPersona: GeneratedPersona = {
-      name: extractName(accountData),
+      name: userName || extractName(accountData),
       profession: extractProfession(accountData),
       languages: extractLanguages(accountData),
       interests: extractInterests(accountData),

@@ -12,9 +12,10 @@ export async function generatePersonaFromAccounts(
     ? (raw as any)
     : { accounts: raw };
 
-  // Extract focus areas and custom instructions from the raw payload
+  // Extract focus areas, custom instructions, and userName from the raw payload
   const focusAreas = (raw as any)?.focusAreas;
   const customInstructions = (raw as any)?.customInstructions;
+  const userName = (raw as any)?.userName;
 
   const accParse = ConnectedAccountsSchema.safeParse(accounts);
   if (!accParse.success) {
@@ -25,7 +26,7 @@ export async function generatePersonaFromAccounts(
   // Try LLM-powered generation first (if enabled and API key provided)
   if (useLLM && apiKey) {
     try {
-      const llmPersona = await generatePersonaWithLLM(acc, { apiKey }, { focusAreas, customInstructions });
+      const llmPersona = await generatePersonaWithLLM(acc, { apiKey }, { focusAreas, customInstructions, userName });
       if (llmPersona) {
         console.log("✅ Generated persona using LLM with focus areas:", focusAreas);
         return llmPersona;
@@ -37,7 +38,14 @@ export async function generatePersonaFromAccounts(
 
   // Fallback: Rule-based generation (original implementation)
   console.log("📋 Using rule-based persona generation");
-  return generatePersonaRuleBased(acc);
+  const ruleBasedPersona = generatePersonaRuleBased(acc);
+
+  // Override name with user's preferred name if provided
+  if (userName) {
+    ruleBasedPersona.name = userName;
+  }
+
+  return ruleBasedPersona;
 }
 
 /**

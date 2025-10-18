@@ -11,6 +11,7 @@ import { Brain, Github, Mail } from 'lucide-react'
 import { signup } from '@/app/actions/auth'
 
 export default function SignUpPage() {
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -21,6 +22,11 @@ export default function SignUpPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
+
+    if (!name || name.trim().length < 2) {
+      setError('Please enter your name (at least 2 characters)')
+      return
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match')
@@ -35,6 +41,7 @@ export default function SignUpPage() {
     setLoading(true)
 
     const formData = new FormData()
+    formData.append('name', name.trim())
     formData.append('email', email)
     formData.append('password', password)
 
@@ -75,6 +82,20 @@ export default function SignUpPage() {
                   {error}
                 </div>
               )}
+
+              <div className="space-y-2">
+                <Label htmlFor="name">Preferred Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="How should we call you?"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  disabled={loading}
+                  minLength={2}
+                />
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>

@@ -20,7 +20,7 @@ interface GeminiConfig {
 export async function generatePersonaWithLLM(
   accounts: ConnectedAccounts,
   config: GeminiConfig,
-  options?: { focusAreas?: string[]; customInstructions?: string }
+  options?: { focusAreas?: string[]; customInstructions?: string; userName?: string }
 ): Promise<Persona | null> {
   const { apiKey, model = "gemini-2.0-flash-exp", temperature = 0.7, maxRetries = 3 } = config;
 
@@ -186,6 +186,12 @@ IMPORTANT:
 
       // Parse and validate against our Zod schema
       const personaData = JSON.parse(generatedText);
+
+      // Override name with user's preferred name if provided
+      if (options?.userName) {
+        personaData.name = options.userName;
+      }
+
       const persona = PersonaSchema.parse(personaData);
 
       return persona;
