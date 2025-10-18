@@ -1,17 +1,15 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-
-// Required for Cloudflare Workers deployment
+export const runtime = 'edge'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const REDIRECT_URI = process.env.YOUTUBE_REDIRECT_URI || 'http://localhost:3000/api/youtube/callback'
 const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/userinfo.email'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
+export async function GET() {
   if (!GOOGLE_CLIENT_ID) {
-    return res.status(500).json({ error: 'GOOGLE_CLIENT_ID not configured' })
+    return new Response(JSON.stringify({ error: 'GOOGLE_CLIENT_ID not configured' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 
   const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
@@ -22,5 +20,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   authUrl.searchParams.set('access_type', 'offline')
   authUrl.searchParams.set('prompt', 'consent')
 
-  return res.redirect(307, authUrl.toString())
+  return Response.redirect(authUrl.toString(), 307)
 }
