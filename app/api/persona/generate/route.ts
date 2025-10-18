@@ -22,12 +22,37 @@ export async function POST(request: Request) {
     const { custom_instructions, focus_areas } = body
 
     // Fetch user's connected account data from Supabase
-    // Note: user_youtube_data uses email as the key, not user_id
-    const { data: youtubeData } = await supabase
+    // Try user_id first (preferred), fallback to email (for data collected during onboarding)
+    let youtubeData = null
+
+    // First attempt: Query by user_id (if YouTube data is already linked)
+    const { data: dataByUserId } = await supabase
       .from('user_youtube_data')
       .select('*')
-      .eq('email', user.email)
-      .single()
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (dataByUserId) {
+      youtubeData = dataByUserId
+    } else {
+      // Fallback: Query by email (for pre-signup YouTube data)
+      const { data: dataByEmail } = await supabase
+        .from('user_youtube_data')
+        .select('*')
+        .eq('email', user.email)
+        .maybeSingle()
+
+      if (dataByEmail) {
+        youtubeData = dataByEmail
+
+        // Link this data to user_id for future queries
+        await supabase
+          .from('user_youtube_data')
+          .update({ user_id: user.id, updated_at: new Date().toISOString() })
+          .eq('email', user.email)
+          .is('user_id', null)
+      }
+    }
 
     // Build connected account data structure
     const accountData: ConnectedAccountData = {}
