@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { YouTubeClient } from '@/lib/youtube/client'
 
+// Required for Cloudflare Workers deployment
+export const runtime = 'edge'
+
 /**
  * Refresh YouTube data using stored access token
  * GET /api/youtube/refresh

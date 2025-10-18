@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 
+// Required for Cloudflare Workers deployment
+export const runtime = 'edge'
+
 /**
  * Debug endpoint to verify environment variables are set correctly
  * GET /api/debug/env

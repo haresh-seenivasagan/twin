@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Required for Cloudflare Workers deployment
+export const runtime = 'edge'
+
 const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'https://twin-mcp-persona.erniesg.workers.dev/mcp'
 
 interface MCPRequest {

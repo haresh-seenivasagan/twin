@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Required for Cloudflare Workers deployment
+export const runtime = 'edge'
+
 export async function PUT(request: NextRequest) {
   try {
     // Get authenticated user

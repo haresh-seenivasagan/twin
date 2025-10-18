@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Required for Cloudflare Workers deployment
+export const runtime = 'edge'
+
 /**
  * Debug endpoint to view raw YouTube data collected from OAuth
  * GET /api/youtube/debug

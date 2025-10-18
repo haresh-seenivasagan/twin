@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from '@/lib/youtube/token-store'
 import { YouTubeClient } from '@/lib/youtube/client'
 
+// Required for Cloudflare Workers deployment
+export const runtime = 'edge'
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const email = searchParams.get('email')
