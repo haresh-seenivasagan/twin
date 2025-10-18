@@ -56,7 +56,7 @@ export default function ReviewPersonaPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          persona: editedPersona,
+          persona_data: editedPersona,
         }),
       })
 

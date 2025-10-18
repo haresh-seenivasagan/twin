@@ -1,6 +1,11 @@
 import { ConnectedAccountsSchema, Persona, PersonaSchema } from "./schemas";
+import { generatePersonaWithLLM } from "./llm";
 
-export function generatePersonaFromAccounts(raw: unknown): Persona {
+export async function generatePersonaFromAccounts(
+  raw: unknown,
+  options?: { apiKey?: string; useLLM?: boolean }
+): Promise<Persona> {
+  const { apiKey, useLLM = true } = options || {};
   const { accounts } = ConnectedAccountsSchema.transform(a => ({ accounts: a })).safeParse(raw).success
     ? (raw as any)
     : { accounts: raw };
@@ -10,6 +15,29 @@ export function generatePersonaFromAccounts(raw: unknown): Persona {
     throw new Error("Invalid connected accounts payload");
   }
   const acc = accParse.data;
+
+  // Try LLM-powered generation first (if enabled and API key provided)
+  if (useLLM && apiKey) {
+    try {
+      const llmPersona = await generatePersonaWithLLM(acc, { apiKey });
+      if (llmPersona) {
+        console.log("✅ Generated persona using LLM");
+        return llmPersona;
+      }
+    } catch (error) {
+      console.warn("⚠️ LLM generation failed, falling back to rule-based:", error);
+    }
+  }
+
+  // Fallback: Rule-based generation (original implementation)
+  console.log("📋 Using rule-based persona generation");
+  return generatePersonaRuleBased(acc);
+}
+
+/**
+ * Rule-based persona generation (fallback when LLM fails or is disabled)
+ */
+function generatePersonaRuleBased(acc: any): Persona {
 
   const base: Persona = {
     name: "User",
@@ -88,7 +116,7 @@ export function generatePersonaFromAccounts(raw: unknown): Persona {
   }
 
   base.interests = Array.from(new Set(base.interests));
-  base.currentGoals = generateGoals(acc);
+  base.currentGoals = generateGoalsRuleBased(acc);
 
   return PersonaSchema.parse(base);
 }
@@ -104,7 +132,7 @@ function extractProfessionFromBio(bio: string): string {
   return "Professional";
 }
 
-function generateGoals(acc: any): string[] {
+function generateGoalsRuleBased(acc: any): string[] {
   const goals: string[] = [];
   if (acc.github?.repos?.length) {
     const repos = [...acc.github.repos].sort((a, b) => b.stars - a.stars).slice(0, 3);

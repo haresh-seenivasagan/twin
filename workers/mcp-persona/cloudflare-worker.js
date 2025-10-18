@@ -320,15 +320,25 @@ export default {
           }
 
           if (name === 'persona.generate_from_accounts') {
-            const persona = generatePersonaFromAccounts(args);
+            // Use LLM if API key is available, otherwise fall back to rule-based
+            const geminiApiKey = env.GEMINI_API_KEY;
+            const persona = await generatePersonaFromAccounts(args, {
+              apiKey: geminiApiKey,
+              useLLM: !!geminiApiKey
+            });
             return new Response(JSON.stringify({
               jsonrpc: '2.0',
               id: body.id,
               result: {
-                content: [{ type: 'text', text: JSON.stringify(persona) }]
+                content: [{ type: 'text', text: JSON.stringify(persona) }],
+                isEof: true
               }
             }), {
-              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+              headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'X-Persona-Method': geminiApiKey ? 'llm' : 'rule-based'
+              }
             });
           }
 

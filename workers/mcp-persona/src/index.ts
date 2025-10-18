@@ -40,12 +40,17 @@ export default function createServer({ config }: { config: z.infer<typeof config
     "persona.generate_from_accounts",
     {
       title: "Generate persona from connected accounts",
-      description: "Creates a normalized persona profile from social/account data",
+      description: "Creates a normalized persona profile from social/account data using LLM (falls back to rule-based if unavailable)",
       inputSchema: { accounts: ConnectedAccountsSchema },
       outputSchema: PersonaSchema,
     },
     async ({ accounts }) => {
-      const persona = generatePersonaFromAccounts({ accounts });
+      // Use Gemini API key from config if available (pass via env or config)
+      const geminiApiKey = process.env.GEMINI_API_KEY || (config as any)['gemini.apiKey'];
+      const persona = await generatePersonaFromAccounts({ accounts }, {
+        apiKey: geminiApiKey,
+        useLLM: !!geminiApiKey
+      });
       return { content: [{ type: "text", text: JSON.stringify(persona) }], structuredContent: persona };
     }
   );
