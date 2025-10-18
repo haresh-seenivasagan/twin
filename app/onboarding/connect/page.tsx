@@ -22,6 +22,7 @@ function ConnectAccountsContent() {
   const [loading, setLoading] = useState<string | null>(null)
   const [connectedEmail, setConnectedEmail] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [youtubeStats, setYoutubeStats] = useState<{subs: number, playlists: number, liked: number} | null>(null)
   const [connections, setConnections] = useState<AccountConnection[]>([
     {
       id: 'youtube',
@@ -56,18 +57,38 @@ function ConnectAccountsContent() {
     const youtubeConnected = searchParams.get('youtube')
     const email = searchParams.get('email')
     const errorParam = searchParams.get('error')
+    const errorMessage = searchParams.get('message')
+    const subs = searchParams.get('subs')
+    const playlists = searchParams.get('playlists')
+    const liked = searchParams.get('liked')
+
+    console.log('OAuth callback params:', { youtubeConnected, email, errorParam, errorMessage, subs, playlists, liked })
 
     if (youtubeConnected === 'connected' && email) {
+      console.log('Setting YouTube as connected for:', email)
       setConnectedEmail(email)
       setConnections(prev =>
         prev.map(conn =>
           conn.id === 'youtube' ? { ...conn, connected: true } : conn
         )
       )
+
+      // Store YouTube stats
+      if (subs || playlists || liked) {
+        setYoutubeStats({
+          subs: parseInt(subs || '0'),
+          playlists: parseInt(playlists || '0'),
+          liked: parseInt(liked || '0'),
+        })
+      }
     }
 
     if (errorParam === 'youtube_auth_failed') {
-      setError('Failed to connect YouTube. Please try again.')
+      const fullError = errorMessage
+        ? `Failed to connect YouTube: ${errorMessage}`
+        : 'Failed to connect YouTube. Please try again.'
+      console.error('YouTube OAuth error:', fullError)
+      setError(fullError)
     }
   }, [searchParams])
 
@@ -140,9 +161,16 @@ function ConnectAccountsContent() {
         {/* Success Message */}
         {connectedEmail && (
           <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-            <p className="text-sm text-green-800 dark:text-green-200">
+            <p className="text-sm text-green-800 dark:text-green-200 mb-2">
               <strong>Success!</strong> YouTube connected for {connectedEmail}
             </p>
+            {youtubeStats && (
+              <div className="flex gap-4 text-xs text-green-700 dark:text-green-300">
+                <span>📺 {youtubeStats.subs} subscriptions</span>
+                <span>📋 {youtubeStats.playlists} playlists</span>
+                <span>❤️ {youtubeStats.liked} liked videos</span>
+              </div>
+            )}
           </div>
         )}
 
