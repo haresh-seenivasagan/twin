@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Brain, Youtube, Mail, Linkedin, Check, ChevronRight, Sparkles, AlertCircle } from 'lucide-react'
+import { Youtube, Mail, Linkedin, Check, ChevronRight, Sparkles, AlertCircle } from 'lucide-react'
+import { InfinityIcon } from '@/components/ui/infinity-icon'
 
 interface AccountConnection {
   id: string
@@ -192,7 +193,7 @@ function ConnectAccountsContent() {
       <nav className="border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Brain className="h-8 w-8 text-primary" />
+            <InfinityIcon className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold">Twin</span>
           </div>
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -351,7 +352,7 @@ export default function ConnectAccountsPage() {
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Brain className="h-12 w-12 animate-pulse mx-auto mb-4 text-primary" />
+          <InfinityIcon className="h-12 w-12 animate-pulse mx-auto mb-4 text-primary" />
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>

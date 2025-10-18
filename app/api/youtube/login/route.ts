@@ -17,6 +17,9 @@ export async function GET() {
   authUrl.searchParams.set('scope', SCOPES)
   authUrl.searchParams.set('access_type', 'offline')
   authUrl.searchParams.set('prompt', 'consent')
+  // 添加参数来改善 OAuth 体验
+  authUrl.searchParams.set('include_granted_scopes', 'true')
+  authUrl.searchParams.set('state', 'youtube_connect')
 
   return Response.redirect(authUrl.toString(), 307)
 }

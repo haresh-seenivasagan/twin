@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Brain, Github, Mail } from 'lucide-react'
+import { Github, Mail } from 'lucide-react'
+import { InfinityIcon } from '@/components/ui/infinity-icon'
 import { login } from '@/app/actions/auth'
 
 export default function LoginPage() {
@@ -42,7 +43,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <Link href="/" className="inline-flex items-center justify-center space-x-2">
-            <Brain className="h-10 w-10 text-primary" />
+            <InfinityIcon className="h-10 w-10 text-primary" />
             <span className="text-2xl font-bold">Twin</span>
           </Link>
           <h2 className="mt-6 text-3xl font-bold">Welcome back</h2>

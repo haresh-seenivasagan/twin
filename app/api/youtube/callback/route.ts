@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/service-role'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
@@ -11,8 +12,18 @@ export async function GET(request: Request) {
 
   // Handle OAuth errors
   if (error) {
+    console.error('OAuth error:', error)
+    
+    // 处理特定的 OAuth 错误
+    let errorMessage = `OAuth error: ${error}`
+    if (error === 'access_denied') {
+      errorMessage = '用户拒绝了授权请求。请重试并确保授权访问。'
+    } else if (error === 'invalid_request') {
+      errorMessage = 'OAuth 请求无效。请检查配置。'
+    }
+    
     return new Response(
-      JSON.stringify({ error: `OAuth error: ${error}` }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -141,7 +152,8 @@ export async function GET(request: Request) {
     })
 
     // Store YouTube data (not tokens) in Supabase for persona generation
-    const supabase = await createClient()
+    // Use service role client to bypass RLS during onboarding
+    const supabaseServiceRole = createServiceRoleClient()
 
     // Store the full response data (including any errors) for debugging
     const dataToStore = {
@@ -160,8 +172,8 @@ export async function GET(request: Request) {
       liked_count: Array.isArray(dataToStore.liked_videos) ? dataToStore.liked_videos.length : 'not array',
     })
 
-    // Use email as the key - no auth required for onboarding
-    const { error: dataError } = await supabase
+    // Use service role to bypass RLS - user is not authenticated during onboarding
+    const { error: dataError } = await supabaseServiceRole
       .from('user_youtube_data')
       .upsert(dataToStore, {
         onConflict: 'email',
