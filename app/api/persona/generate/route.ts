@@ -25,22 +25,39 @@ export async function POST(request: Request) {
     // Try user_id first (preferred), fallback to email (for data collected during onboarding)
     let youtubeData = null
 
+    console.log('Fetching YouTube data for user:', {
+      user_id: user.id,
+      email: user.email
+    })
+
     // First attempt: Query by user_id (if YouTube data is already linked)
-    const { data: dataByUserId } = await supabase
+    const { data: dataByUserId, error: userIdError } = await supabase
       .from('user_youtube_data')
       .select('*')
       .eq('user_id', user.id)
       .maybeSingle()
 
+    console.log('Query by user_id result:', {
+      found: !!dataByUserId,
+      error: userIdError?.message,
+      subscriptionCount: dataByUserId?.subscriptions?.length || 0
+    })
+
     if (dataByUserId) {
       youtubeData = dataByUserId
     } else {
       // Fallback: Query by email (for pre-signup YouTube data)
-      const { data: dataByEmail } = await supabase
+      const { data: dataByEmail, error: emailError } = await supabase
         .from('user_youtube_data')
         .select('*')
         .eq('email', user.email)
         .maybeSingle()
+
+      console.log('Query by email result:', {
+        found: !!dataByEmail,
+        error: emailError?.message,
+        subscriptionCount: dataByEmail?.subscriptions?.length || 0
+      })
 
       if (dataByEmail) {
         youtubeData = dataByEmail
@@ -65,12 +82,27 @@ export async function POST(request: Request) {
       }
     }
 
+    console.log('Account data being passed to MCP:', {
+      hasYoutube: !!accountData.youtube,
+      subscriptionCount: accountData.youtube?.subscriptions?.length || 0,
+      playlistCount: accountData.youtube?.playlists?.length || 0,
+      likesCount: accountData.youtube?.likes?.length || 0,
+      focusAreas: focus_areas,
+      hasCustomInstructions: !!custom_instructions
+    })
+
     // Generate persona using AI (or mock for now)
     const persona = await generatePersonaFromAccounts(
       accountData,
       custom_instructions,
       focus_areas
     )
+
+    console.log('Generated persona:', {
+      hasPersona: !!persona,
+      interests: persona?.interests?.length || 0,
+      goals: persona?.currentGoals?.length || 0
+    })
 
     // Store generated persona in Supabase
     const { data: savedPersona, error: saveError } = await supabase
