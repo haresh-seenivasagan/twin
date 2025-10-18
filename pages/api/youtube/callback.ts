@@ -1,27 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { YouTubeClient } from '@/lib/youtube/client'
 
 // Required for Cloudflare Workers deployment
-export const runtime = 'edge'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
 const REDIRECT_URI = process.env.YOUTUBE_REDIRECT_URI || 'http://localhost:3000/api/youtube/callback'
 
-export async function GET(request: NextRequest) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+  const request = req;
   const searchParams = request.nextUrl.searchParams
   const code = searchParams.get('code')
 
   if (!code) {
-    return NextResponse.json(
+    return res.status(200).json(
       { error: 'No authorization code provided' },
       { status: 400 }
     )
   }
 
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-    return NextResponse.json(
+    return res.status(200).json(
       { error: 'OAuth credentials not configured' },
       { status: 500 }
     )
@@ -120,7 +123,7 @@ export async function GET(request: NextRequest) {
     const redirectUrl = new URL('/onboarding/generate', request.nextUrl.origin)
     redirectUrl.searchParams.set('youtube', 'connected')
 
-    return NextResponse.redirect(redirectUrl.toString())
+    return res.redirect(307, redirectUrl.toString())
   } catch (error) {
     console.error('YouTube OAuth callback error:', error)
 
@@ -128,6 +131,6 @@ export async function GET(request: NextRequest) {
     const redirectUrl = new URL('/onboarding/connect', request.nextUrl.origin)
     redirectUrl.searchParams.set('error', 'youtube_auth_failed')
 
-    return NextResponse.redirect(redirectUrl.toString())
+    return res.redirect(307, redirectUrl.toString())
   }
 }

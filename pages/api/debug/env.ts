@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server'
+import type { NextApiRequest, NextApiResponse } from 'next'
 
 // Required for Cloudflare Workers deployment
-export const runtime = 'edge'
 
 /**
  * Debug endpoint to verify environment variables are set correctly
@@ -9,7 +8,10 @@ export const runtime = 'edge'
  *
  * This helps other developers troubleshoot setup issues
  */
-export async function GET() {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
   const env = {
     // Public env vars (safe to expose)
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -95,7 +97,7 @@ export async function GET() {
   const status = issues.some(i => i.severity === 'CRITICAL') ? 'ERROR' :
                  issues.length > 0 ? 'WARNING' : 'OK'
 
-  return NextResponse.json({
+  return res.status(200).json({
     status,
     timestamp: new Date().toISOString(),
     environment: {

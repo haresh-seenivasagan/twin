@@ -1,22 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { YouTubeClient } from '@/lib/youtube/client'
 
 // Required for Cloudflare Workers deployment
-export const runtime = 'edge'
 
 /**
  * Refresh YouTube data using stored access token
  * GET /api/youtube/refresh
  */
-export async function GET(request: NextRequest) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+  const request = req;
   try {
     // Get authenticated user
     const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      return NextResponse.json(
+      return res.status(200).json(
         { error: 'User not authenticated' },
         { status: 401 }
       )
@@ -30,7 +33,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (tokenError || !tokenData) {
-      return NextResponse.json(
+      return res.status(200).json(
         { error: 'No YouTube token found. Please connect your YouTube account first.' },
         { status: 400 }
       )
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest) {
     const now = new Date()
 
     if (expiresAt < now) {
-      return NextResponse.json(
+      return res.status(200).json(
         { error: 'YouTube token expired. Please reconnect your YouTube account.' },
         { status: 401 }
       )
@@ -81,7 +84,7 @@ export async function GET(request: NextRequest) {
       throw new Error('Failed to save updated YouTube data')
     }
 
-    return NextResponse.json({
+    return res.status(200).json({
       success: true,
       message: 'YouTube data refreshed successfully',
       data: {
@@ -94,7 +97,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('YouTube refresh error:', error)
-    return NextResponse.json(
+    return res.status(200).json(
       { error: error instanceof Error ? error.message : 'Failed to refresh YouTube data' },
       { status: 500 }
     )

@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@/lib/supabase/server'
 
 // Required for Cloudflare Workers deployment
-export const runtime = 'edge'
 
 const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'https://twin-mcp-persona.erniesg.workers.dev/mcp'
 
@@ -21,14 +20,18 @@ interface GeneratePersonaOptions {
   customInstructions?: string
 }
 
-export async function POST(request: NextRequest) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+  const request = req;
   try {
     // Get authenticated user
     const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      return NextResponse.json(
+      return res.status(200).json(
         { error: 'User not authenticated' },
         { status: 401 }
       )
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (fetchError || !personaData?.youtube_data) {
-      return NextResponse.json(
+      return res.status(200).json(
         { error: 'No YouTube data found. Please connect your YouTube account first.' },
         { status: 400 }
       )
@@ -126,13 +129,13 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to save generated persona')
     }
 
-    return NextResponse.json({
+    return res.status(200).json({
       success: true,
       persona: generatedPersona,
     })
   } catch (error) {
     console.error('Persona generation error:', error)
-    return NextResponse.json(
+    return res.status(200).json(
       { error: error instanceof Error ? error.message : 'Failed to generate persona' },
       { status: 500 }
     )
@@ -140,14 +143,18 @@ export async function POST(request: NextRequest) {
 }
 
 // GET endpoint to retrieve current persona
-export async function GET(request: NextRequest) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+  const request = req;
   try {
     // Get authenticated user
     const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      return NextResponse.json(
+      return res.status(200).json(
         { error: 'User not authenticated' },
         { status: 401 }
       )
@@ -161,13 +168,13 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (fetchError) {
-      return NextResponse.json(
+      return res.status(200).json(
         { error: 'No persona found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json({
+    return res.status(200).json({
       success: true,
       persona: personaData.persona,
       youtubeData: personaData.youtube_data,
@@ -176,7 +183,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error fetching persona:', error)
-    return NextResponse.json(
+    return res.status(200).json(
       { error: error instanceof Error ? error.message : 'Failed to fetch persona' },
       { status: 500 }
     )

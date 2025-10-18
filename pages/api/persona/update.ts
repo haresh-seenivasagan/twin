@@ -1,17 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@/lib/supabase/server'
 
 // Required for Cloudflare Workers deployment
-export const runtime = 'edge'
 
-export async function PUT(request: NextRequest) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'PUT') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+  const request = req;
   try {
     // Get authenticated user
     const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      return NextResponse.json(
+      return res.status(200).json(
         { error: 'User not authenticated' },
         { status: 401 }
       )
@@ -21,7 +24,7 @@ export async function PUT(request: NextRequest) {
     const { persona } = await request.json()
 
     if (!persona) {
-      return NextResponse.json(
+      return res.status(200).json(
         { error: 'Persona data is required' },
         { status: 400 }
       )
@@ -49,13 +52,13 @@ export async function PUT(request: NextRequest) {
       })
       .eq('id', user.id)
 
-    return NextResponse.json({
+    return res.status(200).json({
       success: true,
       persona,
     })
   } catch (error) {
     console.error('Persona update error:', error)
-    return NextResponse.json(
+    return res.status(200).json(
       { error: error instanceof Error ? error.message : 'Failed to update persona' },
       { status: 500 }
     )

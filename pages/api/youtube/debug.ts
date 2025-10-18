@@ -1,21 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@/lib/supabase/server'
 
 // Required for Cloudflare Workers deployment
-export const runtime = 'edge'
 
 /**
  * Debug endpoint to view raw YouTube data collected from OAuth
  * GET /api/youtube/debug
  */
-export async function GET(request: NextRequest) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+  const request = req;
   try {
     // Get authenticated user
     const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      return NextResponse.json(
+      return res.status(200).json(
         { error: 'User not authenticated' },
         { status: 401 }
       )
@@ -29,7 +32,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (fetchError) {
-      return NextResponse.json({
+      return res.status(200).json({
         message: 'No YouTube data found yet',
         hint: 'Connect your YouTube account at /onboarding/connect',
         user_id: user.id,
@@ -40,7 +43,7 @@ export async function GET(request: NextRequest) {
     const youtubeData = personaData?.youtube_data
 
     // Format the response for easy viewing
-    return NextResponse.json({
+    return res.status(200).json({
       user: {
         id: user.id,
         email: user.email,
@@ -80,7 +83,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Debug endpoint error:', error)
-    return NextResponse.json(
+    return res.status(200).json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
