@@ -50,8 +50,10 @@ export default function SignUpPage() {
     if (result?.error) {
       setError(result.error)
       setLoading(false)
+    } else if (result?.success) {
+      // Redirect to onboarding on success
+      router.push('/onboarding/connect')
     }
-    // If no error, the server action will redirect
   }
 
   return (
