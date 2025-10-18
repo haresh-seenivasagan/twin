@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import { getAllEmails, getToken } from '@/lib/youtube/token-store'
 
 export async function GET() {

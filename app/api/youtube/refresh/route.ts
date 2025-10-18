@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import { createClient } from '@/lib/supabase/server'
 import { getToken } from '@/lib/youtube/token-store'
 import { YouTubeClient } from '@/lib/youtube/client'

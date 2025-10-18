@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import { createClient } from '@/lib/supabase/server'
 import { generatePersonaFromAccounts, type ConnectedAccountData } from '@/lib/persona/generator'
 

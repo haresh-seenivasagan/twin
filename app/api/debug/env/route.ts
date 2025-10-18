@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 export async function GET() {
   const envVars = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Not set',

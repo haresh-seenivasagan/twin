@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import { createClient } from '@/lib/supabase/server'
 
 export async function PUT(request: Request) {

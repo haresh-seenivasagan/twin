@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const REDIRECT_URI = process.env.YOUTUBE_REDIRECT_URI || 'http://localhost:3000/api/youtube/callback'
 const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/userinfo.email'

@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import { storeToken } from '@/lib/youtube/token-store'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
