@@ -155,9 +155,13 @@ export async function GET(request: Request) {
     // Use service role client to bypass RLS during onboarding
     const supabaseServiceRole = createServiceRoleClient()
 
+    // Get the current logged-in user
+    const { data: { user } } = await supabase.auth.getUser()
+
     // Store the full response data (including any errors) for debugging
     const dataToStore = {
       email,
+      user_id: user?.id || null, // Add user_id from session
       subscriptions: youtubeData.subscriptions?.items || youtubeData.subscriptions || [],
       playlists: youtubeData.playlists?.items || youtubeData.playlists || [],
       liked_videos: youtubeData.liked_videos?.items || youtubeData.liked_videos || [],

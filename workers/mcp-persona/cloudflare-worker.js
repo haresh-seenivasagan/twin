@@ -135,9 +135,10 @@ export default {
             result: {
               protocolVersion: '2024-11-05',
               capabilities: {
-                tools: {}
-                // Only declare capabilities we actually implement
-                // Removed: resources, prompts, logging (not implemented yet)
+                tools: {},
+                prompts: {},
+                resources: {}
+                // Logging not implemented yet
               },
               serverInfo: {
                 name: 'twin-mcp-persona',
@@ -160,6 +161,32 @@ export default {
           return new Response(null, {
             status: 204,
             headers: { 'Access-Control-Allow-Origin': '*' }
+          });
+        }
+
+        // Handle prompts/list (optional MCP method)
+        if (body.method === 'prompts/list') {
+          return new Response(JSON.stringify({
+            jsonrpc: '2.0',
+            id: body.id,
+            result: {
+              prompts: [] // No prompts currently defined
+            }
+          }), {
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        }
+
+        // Handle resources/list (optional MCP method)
+        if (body.method === 'resources/list') {
+          return new Response(JSON.stringify({
+            jsonrpc: '2.0',
+            id: body.id,
+            result: {
+              resources: [] // No resources currently defined
+            }
+          }), {
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
           });
         }
 
