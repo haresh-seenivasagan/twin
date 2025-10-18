@@ -90,6 +90,9 @@ export async function generatePersonaFromAccounts(
       hasCustomInstructions: !!customInstructions,
     })
 
+    // Log full payload for debugging (first 500 chars)
+    console.log('MCP payload preview:', JSON.stringify(mcpAccountData).substring(0, 500))
+
     // Call MCP server to generate persona
     const mcpPersona = await mcpClient.generateFromAccounts(mcpAccountData)
 

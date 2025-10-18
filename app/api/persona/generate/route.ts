@@ -108,11 +108,19 @@ export async function POST(request: Request) {
     )
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+
+    console.error('Persona generation error:', {
+      message: errorMessage,
+      stack: errorStack?.substring(0, 500),
+    })
 
     return new Response(
       JSON.stringify({
         error: 'Failed to generate persona',
         message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? errorStack?.substring(0, 500) : undefined,
+        timestamp: new Date().toISOString(),
       }),
       {
         status: 500,

@@ -41,6 +41,12 @@ export interface Persona {
 export class MCPClient {
   private async call(request: MCPRequest): Promise<MCPResponse> {
     try {
+      console.log('MCP Request:', {
+        url: MCP_SERVER_URL,
+        method: request.method,
+        params: request.params?.name || 'unknown',
+      });
+
       const response = await fetch(MCP_SERVER_URL, {
         method: 'POST',
         headers: {
@@ -50,14 +56,26 @@ export class MCPClient {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('MCP HTTP Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText.substring(0, 500),
+        });
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
 
       if (data.error) {
+        console.error('MCP Error Response:', data.error);
         throw new Error(`MCP Error ${data.error.code}: ${data.error.message}`);
       }
+
+      console.log('MCP Success:', {
+        hasResult: !!data.result,
+        resultKeys: data.result ? Object.keys(data.result) : [],
+      });
 
       return data;
     } catch (error) {
