@@ -131,8 +131,8 @@ export async function generatePersonaFromAccounts(
       'intermediate'
 
     const generatedPersona: GeneratedPersona = {
-      name: mcpPersona.name || userName || 'User',
-      profession: mcpPersona.profession || 'Professional',
+      name: userName || '',  // Use provided name or empty string - never infer
+      profession: mcpPersona.profession || '',  // Use LLM profession or empty string
       languages: mcpPersona.languages || ['English'],
       interests: mcpPersona.interests || [],
       currentGoals: mcpPersona.currentGoals || [],
@@ -141,7 +141,7 @@ export async function generatePersonaFromAccounts(
         verbosity: mcpPersona.style?.verbosity || 'balanced',
         technicalLevel,
       },
-      workingHours: 'Flexible',
+      workingHours: undefined,  // Let user set this manually
       preferences: {
         customContext: customInstructions,
       }
@@ -153,8 +153,8 @@ export async function generatePersonaFromAccounts(
 
     // Fallback to mock persona if MCP fails
     const fallbackPersona: GeneratedPersona = {
-      name: userName || extractName(accountData),
-      profession: extractProfession(accountData),
+      name: userName || '',  // Use provided name or empty string - never infer
+      profession: '',  // Empty - let user fill in
       languages: extractLanguages(accountData),
       interests: extractInterests(accountData),
       currentGoals: generateGoals(accountData, focusAreas),
@@ -163,9 +163,8 @@ export async function generatePersonaFromAccounts(
         verbosity: 'concise',
         technicalLevel: 'advanced'
       },
-      workingHours: 'Flexible',
+      workingHours: undefined,  // Let user set this manually
       preferences: {
-        codeStyle: 'Clean and maintainable',
         customContext: customInstructions,
       }
     }
