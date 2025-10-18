@@ -1,0 +1,19 @@
+name = "twin"
+compatibility_date = "2024-10-18"
+compatibility_flags = ["nodejs_compat"]
+main = ".open-next/worker.js"
+
+# Assets directory for static files
+[assets]
+directory = ".open-next/assets"
+
+# Environment variables
+[vars]
+NEXT_PUBLIC_APP_URL = "https://twin.erniesg.workers.dev"
+NEXT_PUBLIC_SUPABASE_URL = "your-supabase-url"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "your-supabase-anon-key"
+
+# Instructions:
+# 1. Copy this file to wrangler.toml
+# 2. Replace the placeholder values with your actual Supabase credentials
+# 3. wrangler.toml is gitignored to keep your credentials safe
