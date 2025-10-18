@@ -26,7 +26,7 @@ export default function ReviewPersonaPage() {
           throw new Error('Failed to fetch persona')
         }
 
-        const result = await response.json()
+        const result = await response.json() as { persona?: any; error?: string }
 
         if (result.persona && Object.keys(result.persona).length > 0) {
           setPersona(result.persona)

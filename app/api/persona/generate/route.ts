@@ -18,8 +18,14 @@ export async function POST(request: Request) {
     }
 
     // Parse request body
-    const body = await request.json()
-    const { custom_instructions, focus_areas } = body
+    const body = await request.json() as {
+      custom_instructions?: string
+      customInstructions?: string
+      focus_areas?: string[]
+      focusAreas?: string[]
+    }
+    const custom_instructions = body.custom_instructions || body.customInstructions
+    const focus_areas = body.focus_areas || body.focusAreas
 
     // Fetch user's connected account data from Supabase
     // Try user_id first (preferred), fallback to email (for data collected during onboarding)
@@ -82,7 +88,25 @@ export async function POST(request: Request) {
       }
     }
 
-    console.log('Account data being passed to MCP:', {
+    console.log('=== YouTube Data from Supabase ===')
+    console.log('Raw youtubeData:', {
+      exists: !!youtubeData,
+      email: youtubeData?.email,
+      user_id: youtubeData?.user_id,
+      hasSubscriptions: !!youtubeData?.subscriptions,
+      hasPlaylists: !!youtubeData?.playlists,
+      hasLikes: !!youtubeData?.liked_videos,
+      subscriptionCount: youtubeData?.subscriptions?.length || 0,
+      playlistCount: youtubeData?.playlists?.length || 0,
+      likesCount: youtubeData?.liked_videos?.length || 0,
+    })
+
+    if (youtubeData?.subscriptions && youtubeData.subscriptions.length > 0) {
+      console.log('Sample subscriptions (first 3):', youtubeData.subscriptions.slice(0, 3))
+    }
+
+    console.log('=== Account Data Being Passed to MCP ===')
+    console.log({
       hasYoutube: !!accountData.youtube,
       subscriptionCount: accountData.youtube?.subscriptions?.length || 0,
       playlistCount: accountData.youtube?.playlists?.length || 0,
@@ -90,6 +114,16 @@ export async function POST(request: Request) {
       focusAreas: focus_areas,
       hasCustomInstructions: !!custom_instructions
     })
+
+    // Log first few items for debugging
+    if (accountData.youtube?.subscriptions && accountData.youtube.subscriptions.length > 0) {
+      console.log('Sample subscription data being sent:',
+        accountData.youtube.subscriptions.slice(0, 2).map(s => ({
+          title: s?.snippet?.title || s,
+          channelId: s?.snippet?.resourceId?.channelId
+        }))
+      )
+    }
 
     // Generate persona using AI (or mock for now)
     const persona = await generatePersonaFromAccounts(

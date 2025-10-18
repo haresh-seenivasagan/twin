@@ -82,16 +82,29 @@ export async function generatePersonaFromAccounts(
       mcpAccountData.customInstructions = customInstructions
     }
 
-    console.log('Calling MCP server with account data:', {
+    console.log('=== MCP Client Request Data ===')
+    console.log('Account data structure:', {
+      hasGoogle: !!mcpAccountData.google,
       hasYoutube: !!mcpAccountData.google?.youtube,
       subscriptions: mcpAccountData.google?.youtube?.subscriptions?.length || 0,
       playlists: mcpAccountData.google?.youtube?.playlists?.length || 0,
+      likes: mcpAccountData.google?.youtube?.liked_videos?.length || 0,
       focusAreas: mcpAccountData.focusAreas,
       hasCustomInstructions: !!customInstructions,
     })
 
-    // Log full payload for debugging (first 500 chars)
-    console.log('MCP payload preview:', JSON.stringify(mcpAccountData).substring(0, 500))
+    // Log sample subscription data if available
+    if (mcpAccountData.google?.youtube?.subscriptions?.length > 0) {
+      console.log('Sample subscriptions to MCP (first 2):',
+        mcpAccountData.google.youtube.subscriptions.slice(0, 2).map((s: any) => ({
+          title: s?.snippet?.title || 'N/A',
+          channelId: s?.snippet?.resourceId?.channelId || 'N/A'
+        }))
+      )
+    }
+
+    // Log full payload for debugging (first 1000 chars)
+    console.log('MCP full payload (truncated):', JSON.stringify(mcpAccountData).substring(0, 1000))
 
     // Call MCP server to generate persona
     const mcpPersona = await mcpClient.generateFromAccounts(mcpAccountData)

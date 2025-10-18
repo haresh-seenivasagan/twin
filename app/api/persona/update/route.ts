@@ -17,8 +17,17 @@ export async function PUT(request: Request) {
     }
 
     // Parse request body
-    const body = await request.json()
-    const { persona_data, custom_instructions, focus_areas } = body
+    const body = await request.json() as {
+      persona_data?: any
+      persona?: any
+      custom_instructions?: string
+      customInstructions?: string
+      focus_areas?: string[]
+      focusAreas?: string[]
+    }
+    const persona_data = body.persona_data || body.persona
+    const custom_instructions = body.custom_instructions || body.customInstructions
+    const focus_areas = body.focus_areas || body.focusAreas
 
     if (!persona_data) {
       return new Response(
@@ -35,10 +44,10 @@ export async function PUT(request: Request) {
       .from('user_personas')
       .upsert({
         user_id: user.id,
-        persona_data,
+        persona: persona_data,  // Column is 'persona', not 'persona_data'
         custom_instructions,
         focus_areas,
-        updated_at: new Date().toISOString(),
+        // updated_at is auto-set by database
       }, {
         onConflict: 'user_id',
       })

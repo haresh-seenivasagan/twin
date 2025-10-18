@@ -25,7 +25,7 @@ export default function YouTubeDebugPage() {
       setError(null)
 
       const response = await fetch('/api/youtube/debug')
-      const result = await response.json()
+      const result = await response.json() as { error?: string; [key: string]: any }
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch YouTube data')
@@ -45,7 +45,7 @@ export default function YouTubeDebugPage() {
       setError(null)
 
       const response = await fetch('/api/youtube/refresh')
-      const result = await response.json()
+      const result = await response.json() as { error?: string; [key: string]: any }
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to refresh YouTube data')

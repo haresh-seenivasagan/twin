@@ -6,9 +6,15 @@ export async function generatePersonaFromAccounts(
   options?: { apiKey?: string; useLLM?: boolean }
 ): Promise<Persona> {
   const { apiKey, useLLM = true } = options || {};
+
+  // Extract accounts and metadata (focusAreas, customInstructions)
   const { accounts } = ConnectedAccountsSchema.transform(a => ({ accounts: a })).safeParse(raw).success
     ? (raw as any)
     : { accounts: raw };
+
+  // Extract focus areas and custom instructions from the raw payload
+  const focusAreas = (raw as any)?.focusAreas;
+  const customInstructions = (raw as any)?.customInstructions;
 
   const accParse = ConnectedAccountsSchema.safeParse(accounts);
   if (!accParse.success) {
@@ -19,9 +25,9 @@ export async function generatePersonaFromAccounts(
   // Try LLM-powered generation first (if enabled and API key provided)
   if (useLLM && apiKey) {
     try {
-      const llmPersona = await generatePersonaWithLLM(acc, { apiKey });
+      const llmPersona = await generatePersonaWithLLM(acc, { apiKey }, { focusAreas, customInstructions });
       if (llmPersona) {
-        console.log("✅ Generated persona using LLM");
+        console.log("✅ Generated persona using LLM with focus areas:", focusAreas);
         return llmPersona;
       }
     } catch (error) {

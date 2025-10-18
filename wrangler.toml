@@ -7,6 +7,18 @@ main = ".open-next/worker.js"
 [assets]
 directory = ".open-next/assets"
 
+# Service bindings for worker-to-worker communication
+[[services]]
+binding = "MCP_PERSONA"
+service = "twin-mcp-persona"
+
+# Enable full logging
+[observability]
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+
 # Environment variables (ANON key is public-facing, safe to expose)
 [vars]
 NEXT_PUBLIC_APP_URL = "https://twin.erniesg.workers.dev"

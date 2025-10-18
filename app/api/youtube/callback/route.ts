@@ -63,7 +63,12 @@ export async function GET(request: Request) {
       throw new Error(`Token exchange failed: ${errorText}`)
     }
 
-    const tokenData = await tokenResponse.json()
+    const tokenData = await tokenResponse.json() as {
+      access_token: string
+      refresh_token?: string
+      expires_in?: number
+      token_type?: string
+    }
 
     // Get user email from Google
     const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -76,7 +81,11 @@ export async function GET(request: Request) {
       throw new Error('Failed to fetch user info')
     }
 
-    const userInfo = await userInfoResponse.json()
+    const userInfo = await userInfoResponse.json() as {
+      email: string
+      name?: string
+      picture?: string
+    }
     const email = userInfo.email
 
     // Fetch YouTube data immediately using the access token
@@ -104,7 +113,17 @@ export async function GET(request: Request) {
       liked: likedResponse.status,
     })
 
-    const youtubeData = {
+    type YouTubeAPIResponse = {
+      items?: any[]
+      error?: string
+      status?: number
+    }
+
+    const youtubeData: {
+      subscriptions: YouTubeAPIResponse
+      playlists: YouTubeAPIResponse
+      liked_videos: YouTubeAPIResponse
+    } = {
       subscriptions: subsResponse.ok ? await subsResponse.json() : { error: await subsResponse.text(), status: subsResponse.status },
       playlists: playlistsResponse.ok ? await playlistsResponse.json() : { error: await playlistsResponse.text(), status: playlistsResponse.status },
       liked_videos: likedResponse.ok ? await likedResponse.json() : { error: await likedResponse.text(), status: likedResponse.status },

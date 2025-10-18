@@ -18,7 +18,7 @@
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy",
     "supabase:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > lib/database.types.ts",
-    "cf:build": "npx @opennextjs/cloudflare",
+    "cf:build": "npx @opennextjs/cloudflare build",
     "cf:deploy": "pnpm cf:build && wrangler pages deploy",
     "cf:dev": "wrangler pages dev",
     "deploy:staging": "pnpm cf:build && wrangler pages deploy --env staging",

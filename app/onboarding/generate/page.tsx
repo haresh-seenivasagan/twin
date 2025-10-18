@@ -64,11 +64,11 @@ export default function GeneratePersonaPage() {
       })
 
       if (!response.ok) {
-        const error = await response.json()
+        const error = await response.json() as { error?: string }
         throw new Error(error.error || 'Failed to generate persona')
       }
 
-      const result = await response.json()
+      const result = await response.json() as any
 
       // Persona is now saved in Supabase, redirect to review page
       router.push('/onboarding/review')

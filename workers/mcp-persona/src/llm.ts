@@ -19,12 +19,26 @@ interface GeminiConfig {
  */
 export async function generatePersonaWithLLM(
   accounts: ConnectedAccounts,
-  config: GeminiConfig
+  config: GeminiConfig,
+  options?: { focusAreas?: string[]; customInstructions?: string }
 ): Promise<Persona | null> {
   const { apiKey, model = "gemini-2.0-flash-exp", temperature = 0.7, maxRetries = 3 } = config;
 
   // Build rich context from connected accounts
-  const context = buildAccountContext(accounts);
+  const context = buildAccountContext(accounts, options);
+
+  // Build focus areas instruction if provided
+  const focusInstruction = options?.focusAreas?.length
+    ? `\n\nIMPORTANT - USER'S PRIORITY FOCUS AREAS:
+The user has specifically selected these areas as their current priorities: ${options.focusAreas.join(', ')}
+- Generate goals that DIRECTLY relate to these focus areas
+- Prioritize interests that align with these areas
+- Balance technical interests from their data with their stated focus areas`
+    : '';
+
+  const customInstruction = options?.customInstructions
+    ? `\n\nUSER'S CUSTOM INSTRUCTIONS:\n${options.customInstructions}`
+    : '';
 
   // Create prompt for persona generation
   const prompt = `You are an expert at creating detailed user personas from connected account data.
@@ -33,15 +47,15 @@ Analyze this user's connected accounts and create a comprehensive persona that c
 1. Their professional identity and technical expertise
 2. Core interests and focus areas (synthesize from their activity, not just list channel names)
 3. Communication preferences and learning style
-4. Specific, actionable current goals based on their recent activity
+4. Specific, actionable current goals based on their recent activity${options?.focusAreas?.length ? ' AND their selected focus areas' : ''}
 
 Connected Account Data:
-${context}
+${context}${focusInstruction}${customInstruction}
 
 Generate a persona that is:
 - Insightful: Go beyond surface-level data extraction
 - Personalized: Reflect their unique combination of interests and expertise
-- Actionable: Include specific goals that match their current trajectory
+- Actionable: Include specific goals that match their current trajectory${options?.focusAreas?.length ? ' and selected focus areas' : ''}
 - Coherent: Create a unified profile, not just aggregated data
 
 Return a JSON object matching this schema:
@@ -148,7 +162,10 @@ IMPORTANT:
 /**
  * Build rich context string from connected accounts
  */
-function buildAccountContext(accounts: ConnectedAccounts): string {
+function buildAccountContext(
+  accounts: ConnectedAccounts,
+  options?: { focusAreas?: string[]; customInstructions?: string }
+): string {
   const sections: string[] = [];
 
   // YouTube Data (if available)

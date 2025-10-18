@@ -1,7 +1,11 @@
 /**
  * MCP Client for Twin Persona Server
- * Connects to: https://twin-mcp-persona.erniesg.workers.dev/mcp
+ *
+ * In production (Cloudflare Workers): Uses Service Binding for direct worker-to-worker calls
+ * In development (localhost): Uses HTTP fetch to deployed MCP worker
  */
+
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 const MCP_SERVER_URL =
   process.env.NEXT_PUBLIC_MCP_SERVER_URL ||
@@ -41,23 +45,55 @@ export interface Persona {
 export class MCPClient {
   private async call(request: MCPRequest): Promise<MCPResponse> {
     try {
-      console.log('MCP Request:', {
-        url: MCP_SERVER_URL,
-        method: request.method,
-        params: request.params?.name || 'unknown',
-      });
+      let response: Response;
+      let transportMethod = 'http';
 
-      const response = await fetch(MCP_SERVER_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
+      // Try to use Service Binding if running in Cloudflare Worker context
+      try {
+        const context = getCloudflareContext();
+        if (context?.env?.MCP_PERSONA) {
+          transportMethod = 'service-binding';
+          console.log('MCP Request (Service Binding):', {
+            method: request.method,
+            params: request.params?.name || 'unknown',
+            binding: 'MCP_PERSONA',
+          });
+
+          // Use service binding for direct worker-to-worker call
+          // Path must be /mcp (hostname doesn't matter for service bindings)
+          response = await context.env.MCP_PERSONA.fetch('https://fake-host/mcp', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(request),
+          });
+        } else {
+          throw new Error('Service binding not available');
+        }
+      } catch (bindingError) {
+        // Fall back to HTTP fetch (local development)
+        transportMethod = 'http';
+        console.log('MCP Request (HTTP):', {
+          url: MCP_SERVER_URL,
+          method: request.method,
+          params: request.params?.name || 'unknown',
+          reason: bindingError instanceof Error ? bindingError.message : 'unknown',
+        });
+
+        response = await fetch(MCP_SERVER_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
+        });
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('MCP HTTP Error:', {
+          transport: transportMethod,
           status: response.status,
           statusText: response.statusText,
           body: errorText.substring(0, 500),
@@ -65,7 +101,7 @@ export class MCPClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as MCPResponse;
 
       if (data.error) {
         console.error('MCP Error Response:', data.error);
@@ -73,6 +109,7 @@ export class MCPClient {
       }
 
       console.log('MCP Success:', {
+        transport: transportMethod,
         hasResult: !!data.result,
         resultKeys: data.result ? Object.keys(data.result) : [],
       });
