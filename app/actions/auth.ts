@@ -34,11 +34,31 @@ export async function signup(formData: FormData) {
     password: formData.get('password') as string,
   }
 
+  console.log('[AUTH] Attempting signup for:', data.email)
+  console.log('[AUTH] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+  console.log('[AUTH] Supabase ANON key exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
   const { error, data: authData } = await supabase.auth.signUp(data)
 
   if (error) {
-    return { error: error.message }
+    console.error('[AUTH] Signup failed:', {
+      message: error.message,
+      status: error.status,
+      code: (error as any).code,
+      details: error,
+    })
+    return {
+      error: error.message,
+      debug: {
+        status: error.status,
+        code: (error as any).code,
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      }
+    }
   }
+
+  console.log('[AUTH] Signup successful for user:', authData.user?.id)
 
   // Create profile for the new user
   if (authData.user) {
