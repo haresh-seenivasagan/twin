@@ -169,7 +169,10 @@ function extractLanguages(data: ConnectedAccountData): string[] {
   const languages = ['English']
 
   // Check for international content consumption
-  if (data.youtube?.subscriptions?.some(s => s.includes('中文'))) {
+  if (data.youtube?.subscriptions?.some((s: any) => {
+    const title = s?.snippet?.title || s
+    return typeof title === 'string' && title.includes('中文')
+  })) {
     languages.push('Mandarin')
   }
 
@@ -181,10 +184,15 @@ function extractInterests(data: ConnectedAccountData): string[] {
 
   // From YouTube subscriptions
   if (data.youtube?.subscriptions) {
-    data.youtube.subscriptions.forEach(sub => {
-      if (sub.includes('tech')) interests.add('Technology')
-      if (sub.includes('code')) interests.add('Programming')
-      if (sub.includes('AI')) interests.add('Artificial Intelligence')
+    data.youtube.subscriptions.forEach((sub: any) => {
+      // Handle both string format and YouTube API object format
+      const title = sub?.snippet?.title || sub
+      if (typeof title === 'string') {
+        const lowerTitle = title.toLowerCase()
+        if (lowerTitle.includes('tech')) interests.add('Technology')
+        if (lowerTitle.includes('code')) interests.add('Programming')
+        if (lowerTitle.includes('ai') || lowerTitle.includes('artificial intelligence')) interests.add('Artificial Intelligence')
+      }
     })
   }
 
