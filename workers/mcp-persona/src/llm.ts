@@ -20,7 +20,12 @@ interface GeminiConfig {
 export async function generatePersonaWithLLM(
   accounts: ConnectedAccounts,
   config: GeminiConfig,
-  options?: { focusAreas?: string[]; customInstructions?: string; userName?: string }
+  options?: {
+    focusAreas?: string[];
+    customInstructions?: string;
+    userName?: string;
+    generationContext?: any;
+  }
 ): Promise<Persona | null> {
   const { apiKey, model = "gemini-2.0-flash-exp", temperature = 0.7, maxRetries = 3 } = config;
 
@@ -30,6 +35,29 @@ export async function generatePersonaWithLLM(
   // Build focus areas instruction if provided (FRONT-LOAD THIS)
   const hasFocusAreas = options?.focusAreas && options.focusAreas.length > 0;
   const focusAreasText = hasFocusAreas ? options.focusAreas.join(', ') : '';
+
+  // Build rich context from generation context (user's answers to focus area questions)
+  let contextDetails = '';
+  if (options?.generationContext?.context) {
+    const ctx = options.generationContext.context;
+    contextDetails = '\n\n📝 USER CONTEXT (Critical Information):\n';
+
+    for (const [focusArea, answers] of Object.entries(ctx)) {
+      if (answers && typeof answers === 'object') {
+        contextDetails += `\n${focusArea.toUpperCase()}:\n`;
+        for (const [key, value] of Object.entries(answers as Record<string, any>)) {
+          if (value && key !== 'notes') {
+            contextDetails += `- ${key}: ${value}\n`;
+          }
+        }
+        if ((answers as any).notes) {
+          contextDetails += `- Additional context: ${(answers as any).notes}\n`;
+        }
+      }
+    }
+
+    contextDetails += '\n⚠️ USE THIS CONTEXT to make goals HIGHLY SPECIFIC to their situation.';
+  }
 
   const customInstruction = options?.customInstructions
     ? `\n\nUSER'S CUSTOM INSTRUCTIONS:\n${options.customInstructions}`
@@ -43,6 +71,7 @@ export async function generatePersonaWithLLM(
 🎯 PRIMARY DIRECTIVE - USER'S FOCUS AREAS:
 The user has explicitly selected these life areas as their current priorities:
 ${focusAreasText}
+${contextDetails}
 
 YOUR TASK:
 1. Generate 3-5 MEASURABLE, ACTIONABLE goals that DIRECTLY advance these focus areas

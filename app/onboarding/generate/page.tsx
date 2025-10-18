@@ -8,11 +8,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Brain, Sparkles, Loader2, Info, ChevronRight, X, Plus } from 'lucide-react'
+import { FocusAreaContext } from '@/components/persona/FocusAreaContext'
 
 interface GenerationOptions {
   includeCustomInstructions: boolean
   customInstructions: string
   focusAreas: string[]
+}
+
+interface FocusAreaContextData {
+  [focusArea: string]: Record<string, any>
 }
 
 export default function GeneratePersonaPage() {
@@ -22,12 +27,13 @@ export default function GeneratePersonaPage() {
   const [selectedFocusAreas, setSelectedFocusAreas] = useState<string[]>([])
   const [customGoals, setCustomGoals] = useState<string[]>([])
   const [customGoalInput, setCustomGoalInput] = useState('')
+  const [focusAreaContext, setFocusAreaContext] = useState<FocusAreaContextData>({})
 
   const focusAreas = [
     { id: 'relationships', label: 'Dating & Relationships', icon: '❤️', description: 'Personal connections and dating' },
-    { id: 'mindfulness', label: 'Mental Health', icon: '🧘', description: 'Mindfulness, therapy, self-care' },
-    { id: 'health', label: 'Health & Fitness', icon: '💪', description: 'Exercise, nutrition, wellness' },
-    { id: 'technical', label: 'Technical & Programming', icon: '💻', description: 'Coding, frameworks, software engineering' },
+    { id: 'health', label: 'Mental Health', icon: '🧘', description: 'Mindfulness, therapy, self-care' },
+    { id: 'fitness', label: 'Health & Fitness', icon: '💪', description: 'Exercise, nutrition, wellness' },
+    { id: 'programming', label: 'Technical & Programming', icon: '💻', description: 'Coding, frameworks, software engineering' },
   ]
 
   const handleGenerate = async () => {
@@ -52,6 +58,16 @@ export default function GeneratePersonaPage() {
       // Combine pre-defined focus areas with valid custom goals
       const finalFocusAreas = [...selectedFocusAreas, ...validCustomGoals]
 
+      // Build generation context
+      const generationContext = {
+        version: 1,
+        timestamp: new Date().toISOString(),
+        focusAreas: selectedFocusAreas,
+        context: focusAreaContext
+      }
+
+      console.log('[Generate] Generation context:', generationContext)
+
       // Call the API to generate persona using MCP server
       const response = await fetch('/api/persona/generate', {
         method: 'POST',
@@ -62,6 +78,7 @@ export default function GeneratePersonaPage() {
         body: JSON.stringify({
           focusAreas: finalFocusAreas,
           customInstructions: customInstructions || undefined,
+          generationContext,
         }),
       })
 
@@ -106,6 +123,13 @@ export default function GeneratePersonaPage() {
       e.preventDefault()
       addCustomGoal()
     }
+  }
+
+  const handleContextUpdate = (focusArea: string, context: Record<string, any>) => {
+    setFocusAreaContext(prev => ({
+      ...prev,
+      [focusArea]: context
+    }))
   }
 
   return (
@@ -177,6 +201,26 @@ export default function GeneratePersonaPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Focus Area Context Questions */}
+        {selectedFocusAreas.length > 0 && (
+          <div className="space-y-4 mb-6">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold mb-2">Tell us more</h2>
+              <p className="text-muted-foreground text-sm">
+                Answer a few quick questions to personalize your goals
+              </p>
+            </div>
+            {selectedFocusAreas.map((focusArea) => (
+              <FocusAreaContext
+                key={focusArea}
+                focusArea={focusArea}
+                context={focusAreaContext[focusArea] || {}}
+                onUpdate={(context) => handleContextUpdate(focusArea, context)}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Custom Goals */}
         <Card className="mb-6">

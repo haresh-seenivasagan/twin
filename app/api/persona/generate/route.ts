@@ -23,9 +23,13 @@ export async function POST(request: Request) {
       customInstructions?: string
       focus_areas?: string[]
       focusAreas?: string[]
+      generationContext?: any
     }
     const custom_instructions = body.custom_instructions || body.customInstructions
     const focus_areas = body.focus_areas || body.focusAreas
+    const generation_context = body.generationContext
+
+    console.log('[API] Generation context received:', generation_context)
 
     // Fetch user's connected account data from Supabase
     // Try user_id first (preferred), fallback to email (for data collected during onboarding)
@@ -133,7 +137,8 @@ export async function POST(request: Request) {
       accountData,
       custom_instructions,
       focus_areas,
-      userName
+      userName,
+      generation_context
     )
 
     console.log('Generated persona:', {
@@ -150,6 +155,7 @@ export async function POST(request: Request) {
         persona: persona,  // Column is 'persona', not 'persona_data'
         custom_instructions,
         focus_areas,
+        generation_context,  // Store rich context data
         // created_at and updated_at are auto-set by database
       }, {
         onConflict: 'user_id',

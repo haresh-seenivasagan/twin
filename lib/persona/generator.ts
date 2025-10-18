@@ -52,7 +52,8 @@ export async function generatePersonaFromAccounts(
   accountData: ConnectedAccountData,
   customInstructions?: string,
   focusAreas?: string[],
-  userName?: string
+  userName?: string,
+  generationContext?: any
 ): Promise<GeneratedPersona> {
   const mcpClient = new MCPClient()
 
@@ -86,6 +87,12 @@ export async function generatePersonaFromAccounts(
 
     if (customInstructions) {
       mcpAccountData.customInstructions = customInstructions
+    }
+
+    // Add generation context (rich contextual data from focus area questions)
+    if (generationContext) {
+      mcpAccountData.generationContext = generationContext
+      console.log('[Generator] Passing generation context to MCP:', generationContext)
     }
 
     console.log('=== MCP Client Request Data ===')
