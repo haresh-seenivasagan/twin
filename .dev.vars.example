@@ -1,0 +1,12 @@
+# .dev.vars - Local development secrets
+# Copy this to .dev.vars and add your actual secret keys
+# This file is used by `wrangler dev` for local development
+
+# Supabase Service Role Key (NEVER commit this!)
+# Only needed if you require admin privileges (bypasses RLS)
+# Get from: https://supabase.com/dashboard/project/_/settings/api
+# SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# Other potential secrets for local dev
+# OPENAI_API_KEY=your-openai-key
+# ANTHROPIC_API_KEY=your-anthropic-key

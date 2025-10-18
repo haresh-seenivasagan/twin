@@ -212,6 +212,83 @@ pnpm install
 | `ANTHROPIC_API_KEY` | ❌ | Anthropic API key |
 | `GOOGLE_AI_KEY` | ❌ | Google AI key |
 
+## Security Best Practices (Updated 2025-01)
+
+### Environment Variables Strategy
+
+#### ✅ Public Variables (Safe to Commit)
+These go in `wrangler.toml` under `[vars]`:
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Public anon key (protected by RLS)
+- `NEXT_PUBLIC_APP_URL` - Your app URL
+
+**Why it's safe:** ANON keys are designed for client-side use and are protected by Row Level Security policies in Supabase.
+
+#### ⚠️ Secret Variables (NEVER Commit)
+Use Cloudflare secrets for sensitive data:
+
+```bash
+# Set production secrets (creates new deployment)
+wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+wrangler secret put OPENAI_API_KEY
+wrangler secret put ANTHROPIC_API_KEY
+```
+
+#### Local Development Secrets
+Create `.dev.vars` for local development:
+```bash
+cp .dev.vars.example .dev.vars
+```
+
+Edit `.dev.vars` with your local secrets (if needed):
+```
+SUPABASE_SERVICE_ROLE_KEY=your-local-key
+```
+
+**Important:** `.dev.vars` is gitignored and never committed!
+
+### Managing Secrets
+
+```bash
+# List secrets (shows names only, not values)
+wrangler secret list
+
+# Update a secret (creates new deployment)
+wrangler secret put SECRET_NAME
+
+# Delete a secret
+wrangler secret delete SECRET_NAME
+```
+
+### Security Checklist
+
+- ✅ `wrangler.toml` is in `.gitignore`
+- ✅ `.dev.vars` is in `.gitignore`
+- ✅ `.env.local` is in `.gitignore`
+- ✅ Only `.example` files are committed
+- ✅ ANON keys are safe in `[vars]`
+- ✅ SERVICE_ROLE_KEY only via secrets
+- ✅ Compatibility date set to 2025-01-18
+
+### Compatibility Configuration
+
+Current setup in `wrangler.toml`:
+```toml
+compatibility_date = "2025-01-18"
+compatibility_flags = ["nodejs_compat"]
+```
+
+**What this enables:**
+- Modern Node.js APIs (crypto, buffer, etc.)
+- Automatic `process.env` population (as of 2025-04-01+)
+- Latest Cloudflare Workers features
+
+### Resources
+
+- [Cloudflare Environment Variables](https://developers.cloudflare.com/workers/configuration/environment-variables/)
+- [Cloudflare Secrets](https://developers.cloudflare.com/workers/configuration/secrets/)
+- [Supabase + Cloudflare Workers](https://supabase.com/partners/integrations/cloudflare-workers)
+
 ## Support
 
 For issues or questions:

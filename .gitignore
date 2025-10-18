@@ -1,5 +1,6 @@
 # dependencies
 /node_modules
+node_modules
 /.pnp
 .pnp.js
 
@@ -26,6 +27,7 @@ yarn-error.log*
 # local env files
 .env*.local
 .env.local
+.env
 
 # vercel
 .vercel
@@ -43,6 +45,10 @@ next-env.d.ts
 .open-next/
 build.log
 wrangler.toml
+
+# Smithery build output
+.smithery/
+**/.smithery/
 
 # Editor
 .vscode/
