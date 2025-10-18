@@ -5,6 +5,10 @@
 
 import { generatePersonaFromAccounts } from './src/generation.js';
 import { PersonaSchema } from './src/schemas.js';
+import { InMemoryAdapter } from './src/adapter.js';
+
+// Initialize in-memory storage adapter
+const adapter = new InMemoryAdapter();
 
 export default {
   async fetch(request, env, ctx) {
@@ -76,6 +80,7 @@ export default {
             id: body.id,
             result: {
               tools: [
+                // Generation Tools
                 {
                   name: 'persona.generate_mock',
                   description: 'Generate mock persona for testing with optional custom instructions',
@@ -96,7 +101,7 @@ export default {
                 },
                 {
                   name: 'persona.generate_from_accounts',
-                  description: 'Generate persona from connected accounts',
+                  description: 'Generate persona from connected accounts (Google, GitHub, LinkedIn, Twitter)',
                   inputSchema: {
                     type: 'object',
                     properties: {
@@ -113,12 +118,84 @@ export default {
                     required: ['accounts']
                   }
                 },
+                // CRUD Operations
                 {
-                  name: 'persona.export',
-                  description: 'Export persona in different formats',
+                  name: 'persona.save',
+                  description: 'Save/update a persona (creates new version)',
                   inputSchema: {
                     type: 'object',
                     properties: {
+                      supabaseId: { type: 'string', description: 'User ID from Supabase auth' },
+                      persona: { type: 'object', description: 'Persona data to save' },
+                      llmPreferences: {
+                        type: 'object',
+                        properties: {
+                          default: { type: 'string' },
+                          coding: { type: 'string' },
+                          creative: { type: 'string' },
+                          analysis: { type: 'string' },
+                          chat: { type: 'string' }
+                        }
+                      }
+                    },
+                    required: ['supabaseId', 'persona']
+                  }
+                },
+                {
+                  name: 'persona.get',
+                  description: 'Get persona by user ID or persona ID',
+                  inputSchema: {
+                    type: 'object',
+                    properties: {
+                      supabaseId: { type: 'string' },
+                      personaId: { type: 'string' }
+                    }
+                  }
+                },
+                {
+                  name: 'persona.update_field',
+                  description: 'Update a specific field in the persona (creates new version)',
+                  inputSchema: {
+                    type: 'object',
+                    properties: {
+                      supabaseId: { type: 'string' },
+                      personaId: { type: 'string' },
+                      fieldPath: { type: 'string', description: 'Dot notation path (e.g., "style.formality")' },
+                      value: { description: 'New value for the field' }
+                    }
+                  }
+                },
+                {
+                  name: 'persona.get_history',
+                  description: 'Get version history for a persona',
+                  inputSchema: {
+                    type: 'object',
+                    properties: {
+                      supabaseId: { type: 'string', required: true }
+                    },
+                    required: ['supabaseId']
+                  }
+                },
+                {
+                  name: 'persona.rollback',
+                  description: 'Rollback persona to a previous version',
+                  inputSchema: {
+                    type: 'object',
+                    properties: {
+                      personaId: { type: 'string' },
+                      toVersion: { type: 'number', description: 'Version number to rollback to' }
+                    },
+                    required: ['personaId', 'toVersion']
+                  }
+                },
+                // Export
+                {
+                  name: 'persona.export',
+                  description: 'Export persona in different formats (JSON, YAML, LLM prompt)',
+                  inputSchema: {
+                    type: 'object',
+                    properties: {
+                      supabaseId: { type: 'string' },
                       personaId: { type: 'string' },
                       format: {
                         type: 'string',
@@ -163,6 +240,141 @@ export default {
             }), {
               headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
             });
+          }
+
+          // CRUD Operations
+          if (name === 'persona.save') {
+            try {
+              const result = await adapter.upsertPersona({
+                supabaseId: args.supabaseId,
+                persona: args.persona,
+                llmPreferences: args.llmPreferences || {
+                  default: 'claude',
+                  coding: 'claude',
+                  creative: 'gemini',
+                  analysis: 'openai',
+                  chat: 'claude'
+                }
+              });
+              return new Response(JSON.stringify({
+                jsonrpc: '2.0',
+                id: body.id,
+                result: {
+                  content: [{ type: 'text', text: JSON.stringify(result) }]
+                }
+              }), {
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+              });
+            } catch (error) {
+              return new Response(JSON.stringify({
+                jsonrpc: '2.0',
+                id: body.id,
+                error: { code: -32603, message: error.message }
+              }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+              });
+            }
+          }
+
+          if (name === 'persona.get') {
+            const persona = args.supabaseId
+              ? await adapter.getPersonaBySupabaseId(args.supabaseId)
+              : args.personaId
+              ? await adapter.getPersonaById(args.personaId)
+              : null;
+
+            if (!persona) {
+              return new Response(JSON.stringify({
+                jsonrpc: '2.0',
+                id: body.id,
+                error: { code: -32602, message: 'Persona not found' }
+              }), {
+                status: 404,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+              });
+            }
+
+            return new Response(JSON.stringify({
+              jsonrpc: '2.0',
+              id: body.id,
+              result: {
+                content: [{ type: 'text', text: JSON.stringify(persona) }]
+              }
+            }), {
+              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+            });
+          }
+
+          if (name === 'persona.update_field') {
+            try {
+              const result = await adapter.updatePersonaField({
+                supabaseId: args.supabaseId,
+                personaId: args.personaId,
+                fieldPath: args.fieldPath,
+                value: args.value
+              });
+              return new Response(JSON.stringify({
+                jsonrpc: '2.0',
+                id: body.id,
+                result: {
+                  content: [{ type: 'text', text: JSON.stringify(result) }]
+                }
+              }), {
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+              });
+            } catch (error) {
+              return new Response(JSON.stringify({
+                jsonrpc: '2.0',
+                id: body.id,
+                error: { code: -32603, message: error.message }
+              }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+              });
+            }
+          }
+
+          if (name === 'persona.get_history') {
+            const history = await adapter.getPersonaHistory({
+              supabaseId: args.supabaseId
+            });
+            return new Response(JSON.stringify({
+              jsonrpc: '2.0',
+              id: body.id,
+              result: {
+                content: [{ type: 'text', text: JSON.stringify(history) }]
+              }
+            }), {
+              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+            });
+          }
+
+          if (name === 'persona.rollback') {
+            try {
+              const result = await adapter.rollbackPersona({
+                personaId: args.personaId,
+                toVersion: args.toVersion
+              });
+              return new Response(JSON.stringify({
+                jsonrpc: '2.0',
+                id: body.id,
+                result: {
+                  content: [{ type: 'text', text: JSON.stringify(result) }]
+                }
+              }), {
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+              });
+            } catch (error) {
+              return new Response(JSON.stringify({
+                jsonrpc: '2.0',
+                id: body.id,
+                error: { code: -32603, message: error.message }
+              }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+              });
+            }
           }
 
           if (name === 'persona.export') {
