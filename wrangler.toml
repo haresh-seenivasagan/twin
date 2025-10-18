@@ -1,0 +1,30 @@
+name = "twin-app"
+compatibility_date = "2024-10-18"
+compatibility_flags = ["nodejs_compat"]
+
+# Production environment (default)
+[env.production]
+name = "twin-app-production"
+
+# Staging environment
+[env.staging]
+name = "twin-app-staging"
+
+# Environment variables (will be set via wrangler secret for sensitive data)
+[vars]
+NEXT_PUBLIC_APP_URL = "https://twin-app.pages.dev"
+
+# KV namespaces for session storage (optional, can use D1 instead)
+# [[kv_namespaces]]
+# binding = "SESSIONS"
+# id = "your-kv-namespace-id"
+
+# D1 Database for user data (optional, using Supabase for now)
+# [[d1_databases]]
+# binding = "DB"
+# database_id = "your-d1-database-id"
+
+# R2 bucket for file storage (optional)
+# [[r2_buckets]]
+# binding = "STORAGE"
+# bucket_name = "twin-storage"

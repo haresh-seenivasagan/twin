@@ -1,0 +1,19 @@
+runtime: "typescript"
+env:
+  NODE_ENV: "production"
+startCommand:
+  type: "http"
+  configSchema:
+    type: "object"
+    required: ["db.adapter"]
+    properties:
+      db.adapter:
+        type: "string"
+        enum: ["memory", "convex", "supabase"]
+      convex.url:
+        type: "string"
+      supabase.url:
+        type: "string"
+      supabase.serviceKey:
+        type: "string"
+        sensitive: true
