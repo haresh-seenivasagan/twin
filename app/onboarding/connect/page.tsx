@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Brain, Youtube, Mail, Linkedin, Check, ChevronRight, Sparkles, AlertCircle } from 'lucide-react'
@@ -50,6 +51,56 @@ function ConnectAccountsContent() {
     }
   ])
 
+  // Check Supabase for existing connections on mount
+  useEffect(() => {
+    const checkExistingConnections = async () => {
+      console.log('[Connect] Checking for existing connections')
+      const supabase = createClient()
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        console.log('[Connect] No user logged in')
+        return
+      }
+
+      console.log('[Connect] User logged in:', user.id)
+
+      // Check for YouTube connection
+      const { data: youtubeData, error: ytError } = await supabase
+        .from('user_youtube_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      console.log('[Connect] YouTube data query result:', {
+        found: !!youtubeData,
+        error: ytError?.message,
+        email: youtubeData?.email
+      })
+
+      if (youtubeData && !ytError) {
+        console.log('[Connect] Found existing YouTube connection')
+        setConnectedEmail(youtubeData.email)
+        setConnections(prev =>
+          prev.map(conn =>
+            conn.id === 'youtube' ? { ...conn, connected: true } : conn
+          )
+        )
+
+        // Set YouTube stats
+        setYoutubeStats({
+          subs: youtubeData.subscriptions?.length || 0,
+          playlists: youtubeData.playlists?.length || 0,
+          liked: youtubeData.liked_videos?.length || 0,
+        })
+      }
+    }
+
+    checkExistingConnections()
+  }, [])
+
   // Check for OAuth callback success/error
   useEffect(() => {
     if (!searchParams) return
@@ -62,10 +113,10 @@ function ConnectAccountsContent() {
     const playlists = searchParams.get('playlists')
     const liked = searchParams.get('liked')
 
-    console.log('OAuth callback params:', { youtubeConnected, email, errorParam, errorMessage, subs, playlists, liked })
+    console.log('[Connect] OAuth callback params:', { youtubeConnected, email, errorParam, errorMessage, subs, playlists, liked })
 
     if (youtubeConnected === 'connected' && email) {
-      console.log('Setting YouTube as connected for:', email)
+      console.log('[Connect] Setting YouTube as connected for:', email)
       setConnectedEmail(email)
       setConnections(prev =>
         prev.map(conn =>
@@ -87,7 +138,7 @@ function ConnectAccountsContent() {
       const fullError = errorMessage
         ? `Failed to connect YouTube: ${errorMessage}`
         : 'Failed to connect YouTube. Please try again.'
-      console.error('YouTube OAuth error:', fullError)
+      console.error('[Connect] YouTube OAuth error:', fullError)
       setError(fullError)
     }
   }, [searchParams])
@@ -162,10 +213,10 @@ function ConnectAccountsContent() {
         {connectedEmail && (
           <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
             <p className="text-sm text-green-800 dark:text-green-200 mb-2">
-              <strong>Success!</strong> YouTube connected for {connectedEmail}
+              <strong>YouTube Connected!</strong> {connectedEmail}
             </p>
             {youtubeStats && (
-              <div className="flex gap-4 text-xs text-green-700 dark:text-green-300">
+              <div className="flex flex-wrap gap-4 text-xs text-green-700 dark:text-green-300">
                 <span>📺 {youtubeStats.subs} subscriptions</span>
                 <span>📋 {youtubeStats.playlists} playlists</span>
                 <span>❤️ {youtubeStats.liked} liked videos</span>
@@ -194,7 +245,7 @@ function ConnectAccountsContent() {
                   {account.connected ? (
                     <div className="flex items-center text-green-600 dark:text-green-400">
                       <Check className="h-5 w-5 mr-2" />
-                      <span className="text-sm font-medium">Connected</span>
+                      <span className="text-sm font-medium">Already Connected</span>
                     </div>
                   ) : (
                     <Button
