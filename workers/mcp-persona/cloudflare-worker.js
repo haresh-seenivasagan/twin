@@ -32,45 +32,89 @@ export default {
       });
     }
 
-    // Rate limiting (only for /mcp endpoints)
-    if (url.pathname === '/mcp' && env.RATE_LIMIT) {
+    // Admin reset endpoint (use same admin API key)
+    if (url.pathname === '/admin/reset-limit' && request.method === 'POST') {
+      const apiKey = request.headers.get('X-API-Key');
+      const adminKeys = (env.ADMIN_API_KEYS || '').split(',').filter(Boolean);
+      const isAdmin = apiKey && adminKeys.includes(apiKey);
+
+      if (!isAdmin) {
+        return new Response(JSON.stringify({ error: 'Unauthorized - admin API key required' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+      }
+
+      try {
+        const body = await request.json();
+        const ipToReset = body.ip;
+
+        if (!ipToReset) {
+          return new Response(JSON.stringify({ error: 'IP address required' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        }
+
+        await env.RATE_LIMIT.delete(`rate:${ipToReset}`);
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: `Reset lifetime limit for IP: ${ipToReset}`
+        }), {
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+      }
+    }
+
+    // Admin bypass check (before rate limiting)
+    const apiKey = request.headers.get('X-API-Key');
+    const adminKeys = (env.ADMIN_API_KEYS || '').split(',').filter(Boolean);
+    const isAdmin = apiKey && adminKeys.includes(apiKey);
+
+    // Rate limiting (LIFETIME limit for non-admins)
+    if (url.pathname === '/mcp' && env.RATE_LIMIT && !isAdmin) {
       const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
       const rateLimitKey = `rate:${ip}`;
-      const limit = parseInt(env.RATE_LIMIT_PER_HOUR || '100');
-      const ttl = 3600; // 1 hour
+      const LIFETIME_LIMIT = parseInt(env.LIFETIME_LIMIT || '100');
 
       try {
         const current = await env.RATE_LIMIT.get(rateLimitKey);
         const count = current ? parseInt(current) : 0;
 
-        if (count >= limit) {
+        if (count >= LIFETIME_LIMIT) {
           return new Response(JSON.stringify({
             jsonrpc: '2.0',
             error: {
               code: 429,
-              message: `Rate limit exceeded. Max ${limit} requests per hour. Try again later.`
+              message: `Lifetime limit reached. You have used all ${LIFETIME_LIMIT} requests. Contact admin to reset.`
             },
             id: null
           }), {
             status: 429,
             headers: {
               'Content-Type': 'application/json',
-              'Retry-After': '3600',
-              'X-RateLimit-Limit': limit.toString(),
+              'X-RateLimit-Limit': LIFETIME_LIMIT.toString(),
               'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Lifetime': 'true',
               'Access-Control-Allow-Origin': '*'
             }
           });
         }
 
-        // Increment counter
-        await env.RATE_LIMIT.put(rateLimitKey, (count + 1).toString(), { expirationTtl: ttl });
+        // Increment counter (NO TTL = lifetime)
+        await env.RATE_LIMIT.put(rateLimitKey, (count + 1).toString());
 
-        // Add rate limit headers to response (will be added later in actual response)
+        // Add rate limit headers to response
         ctx.rateLimitInfo = {
-          limit,
-          remaining: limit - count - 1,
-          reset: Date.now() + (ttl * 1000)
+          limit: LIFETIME_LIMIT,
+          remaining: LIFETIME_LIMIT - count - 1,
+          lifetime: true
         };
       } catch (error) {
         // KV error - allow request but log
