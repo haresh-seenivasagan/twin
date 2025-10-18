@@ -109,11 +109,10 @@ export async function POST(request: Request) {
       .from('user_personas')
       .upsert({
         user_id: user.id,
-        persona_data: persona,
+        persona: persona,  // Column is 'persona', not 'persona_data'
         custom_instructions,
         focus_areas,
-        generated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        // created_at and updated_at are auto-set by database
       }, {
         onConflict: 'user_id',
       })
@@ -202,10 +201,10 @@ export async function GET() {
     return new Response(
       JSON.stringify({
         message: 'Persona retrieved successfully',
-        persona: personaRecord.persona_data,
+        persona: personaRecord.persona,  // Column is 'persona', not 'persona_data'
         custom_instructions: personaRecord.custom_instructions,
         focus_areas: personaRecord.focus_areas,
-        generated_at: personaRecord.generated_at,
+        created_at: personaRecord.created_at,
         updated_at: personaRecord.updated_at,
         has_persona: true,
         user_email: user.email,
