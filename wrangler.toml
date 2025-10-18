@@ -1,0 +1,27 @@
+name = "twin"
+compatibility_date = "2025-01-18"
+compatibility_flags = ["nodejs_compat"]
+main = ".open-next/worker.js"
+
+# Assets directory for static files
+[assets]
+directory = ".open-next/assets"
+
+# Environment variables (ANON key is public-facing, safe to expose)
+[vars]
+NEXT_PUBLIC_APP_URL = "https://twin.erniesg.workers.dev"
+NEXT_PUBLIC_SUPABASE_URL = "https://lbyicktafbnqwbieffbj.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxieWlja3RhZmJucXdiaWVmZmJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3NjQyNDAsImV4cCI6MjA3NjM0MDI0MH0.CXNC9UmCRe7707k4pnO4C992hcC3gNmQq41DPcKdaio"
+NEXT_PUBLIC_USE_MOCK = "false"
+NEXT_PUBLIC_MCP_SERVER_URL = "https://twin-mcp-persona.erniesg.workers.dev/mcp"
+YOUTUBE_REDIRECT_URI = "https://twin.erniesg.workers.dev/api/youtube/callback"
+
+# Note: ANON keys are designed for client-side use and are safe to expose
+# Only SUPABASE_SERVICE_KEY should be kept secret (if needed)
+
+# Secrets (set via wrangler secret put):
+# wrangler secret put GOOGLE_CLIENT_ID
+# wrangler secret put GOOGLE_CLIENT_SECRET
+# wrangler secret put GOOGLE_API_KEY
+# wrangler secret put GEMINI_API_KEY
+# wrangler secret put MCP_ADMIN_API_KEY

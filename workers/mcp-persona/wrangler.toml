@@ -1,0 +1,30 @@
+name = "twin-mcp-persona"
+compatibility_date = "2025-01-18"
+compatibility_flags = ["nodejs_compat"]
+main = "cloudflare-worker.js"
+
+# Observability - Enable detailed logs
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+
+# Environment variables
+[vars]
+NODE_ENV = "production"
+DB_ADAPTER = "memory"
+LIFETIME_LIMIT = "50"  # 50 calls total (not per hour)
+
+# KV namespaces for rate limiting
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "df3fb141f51745d68aaa0f479af6230a"
+
+# Secrets (set via wrangler secret put):
+# wrangler secret put ADMIN_API_KEYS      # Comma-separated admin keys (unlimited calls + reset power)
+# wrangler secret put SUPABASE_URL        # For Supabase adapter (future)
+# wrangler secret put SUPABASE_SERVICE_KEY
+# wrangler secret put GEMINI_API_KEY      # For LLM-powered persona generation (ACTIVE)
