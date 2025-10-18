@@ -101,7 +101,7 @@ Generate a persona that is:
 
 Return a JSON object matching this schema:
 {
-  "name": "string (their name from accounts)",
+  "name": "string (ONLY use if explicitly provided, NEVER infer from YouTube channel names)",
   "languages": ["array of language codes like 'en', 'zh'"],
   "preferredLanguage": "string (primary language code)",
   "style": {
@@ -137,7 +137,7 @@ Generate a persona that is:
 
 Return a JSON object matching this schema:
 {
-  "name": "string (their name from accounts)",
+  "name": "string (ONLY use if explicitly provided, NEVER infer from YouTube channel names)",
   "languages": ["array of language codes like 'en', 'zh'"],
   "preferredLanguage": "string (primary language code)",
   "style": {
