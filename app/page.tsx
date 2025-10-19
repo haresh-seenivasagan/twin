@@ -79,7 +79,7 @@ export default function LandingPage() {
           <div className="aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow">
             <iframe
               className="w-full h-full"
-              src={`https://www.youtube.com/embed/${process.env.NEXT_PUBLIC_DEMO_VIDEO_ID || 'P_h9Mt0ZzWg'}?rel=0`}
+              src={`https://www.youtube.com/embed/${process.env.NEXT_PUBLIC_DEMO_VIDEO_ID || 'b4vJ080hqH4'}?rel=0`}
               title="Twin Demo Video"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
