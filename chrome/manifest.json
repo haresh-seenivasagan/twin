@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Twin - AI Personalization",
+  "version": "1.0.0",
+  "description": "Personalize any webpage with AI based on your interests and goals. Your digital twin curates content just for you.",
+  "homepage_url": "https://twin.erniesg.workers.dev",
+
+  "icons": {
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  },
+
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+
+  "host_permissions": [
+    "<all_urls>",
+    "https://twin.erniesg.workers.dev/*"
+  ],
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Twin - AI Personalization",
+    "default_icon": {
+      "16": "icon-16.png",
+      "48": "icon-48.png",
+      "128": "icon-128.png"
+    }
+  },
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["style.css"]
+    }
+  ]
+}

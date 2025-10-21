@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 360px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #ffffff;
+      color: #0a0a0a;
+    }
+
+    .header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .brand svg {
+      width: 24px;
+      height: 24px;
+      color: #0a0a0a;
+    }
+
+    .brand h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+
+    .tagline {
+      font-size: 12px;
+      color: #737373;
+      padding-left: 32px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #0a0a0a;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px 16px;
+      background: #0a0a0a;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    button:hover {
+      background: #1a1a1a;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    button.secondary {
+      background: transparent;
+      color: #0a0a0a;
+      border: 1px solid #e5e5e5;
+    }
+
+    button.secondary:hover {
+      background: #fafafa;
+    }
+
+    .persona-card {
+      background: #fafafa;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .persona-header {
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .persona-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 2px;
+      letter-spacing: -0.3px;
+    }
+
+    .persona-profession {
+      font-size: 13px;
+      color: #737373;
+    }
+
+    .persona-section {
+      margin-bottom: 12px;
+    }
+
+    .persona-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .persona-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #737373;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .persona-list {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #0a0a0a;
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 10px 12px;
+      text-align: center;
+      font-size: 12px;
+      border-radius: 6px;
+      display: none;
+      font-weight: 500;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.error {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+
+    .status.success {
+      background: #f0fdf4;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+    }
+
+    .status.warning {
+      background: #fffbeb;
+      color: #d97706;
+      border: 1px solid #fde68a;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .login-prompt {
+      text-align: center;
+      padding: 24px 0;
+    }
+
+    .login-icon {
+      width: 48px;
+      height: 48px;
+      background: #fafafa;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .login-icon svg {
+      width: 24px;
+      height: 24px;
+      color: #737373;
+    }
+
+    .login-message {
+      font-size: 14px;
+      color: #525252;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18.178 8C21.054 8 23.25 10.015 23.25 12.5C23.25 14.985 21.054 17 18.178 17C16.596 17 15.181 16.165 14.277 14.948L12.007 11.913L9.723 14.948C8.819 16.165 7.404 17 5.822 17C2.946 17 0.75 14.985 0.75 12.5C0.75 10.015 2.946 8 5.822 8C7.404 8 8.819 8.835 9.723 10.052L12.007 13.098L14.277 10.052C15.181 8.835 16.596 8 18.178 8Z" fill="currentColor"/>
+      </svg>
+      <h1>Twin</h1>
+    </div>
+    <p class="tagline">Personalized browsing</p>
+  </div>
+
+  <div class="content">
+    <!-- Not Logged In View -->
+    <div id="login-view" class="hidden">
+      <div class="login-prompt">
+        <div class="login-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
+          </svg>
+        </div>
+        <p class="login-message">
+          Sign in to enable personalized recommendations
+        </p>
+        <button id="login-redirect-btn">Sign in to Twin</button>
+      </div>
+    </div>
+
+    <!-- Persona View -->
+    <div id="persona-view" class="hidden">
+      <div class="persona-card">
+        <div class="persona-header">
+          <div class="persona-name" id="persona-name">Loading...</div>
+          <div class="persona-profession" id="persona-profession"></div>
+        </div>
+
+        <div class="persona-section">
+          <div class="persona-label">Interests</div>
+          <div class="persona-list" id="persona-interests"></div>
+        </div>
+
+        <div class="persona-section">
+          <div class="persona-label">Current Goals</div>
+          <div class="persona-list" id="persona-goals"></div>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="refresh-btn">Refresh Persona</button>
+        <button id="logout-btn" class="secondary">Sign Out</button>
+      </div>
+    </div>
+
+    <div id="status" class="status"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
