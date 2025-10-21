@@ -105,6 +105,273 @@ app.put('/api/personas/:userId', async (c) => {
 })
 
 // ============================================
+// CHROME EXTENSION ENDPOINTS
+// ============================================
+
+app.post('/api/extension/personalize', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { token, pageInfo } = body
+
+    // Validate token
+    if (!token) {
+      return c.json({ error: 'Token required' }, 400)
+    }
+
+    // Decode token (userId:timestamp)
+    let userId: string
+    try {
+      const decoded = atob(token)
+      const [extractedUserId, timestamp] = decoded.split(':')
+      userId = extractedUserId
+
+      // Check if token is less than 24 hours old
+      const tokenAge = Date.now() - parseInt(timestamp)
+      if (tokenAge > 24 * 60 * 60 * 1000) {
+        return c.json({ error: 'Token expired - please visit Twin dashboard' }, 401)
+      }
+    } catch (e) {
+      return c.json({ error: 'Invalid token' }, 400)
+    }
+
+    // Fetch persona from Supabase
+    const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_KEY)
+    const { data: personaRecord, error: fetchError } = await supabase
+      .from('user_personas')
+      .select('persona')
+      .eq('user_id', userId)
+      .single()
+
+    if (fetchError || !personaRecord) {
+      return c.json({ error: 'No persona found - please create one first' }, 404)
+    }
+
+    const persona = personaRecord.persona
+
+    // Validate persona has meaningful data
+    const hasInterests = persona.interests && persona.interests.length > 0
+    const hasGoals = persona.currentGoals && persona.currentGoals.length > 0
+
+    if (!hasInterests && !hasGoals) {
+      return c.json({
+        error: 'Persona incomplete - please add interests and goals in your dashboard',
+        incomplete: true
+      }, 400)
+    }
+
+    // Build user context from persona
+    const userContext = buildPersonaContext(persona)
+
+    // Build AI prompt
+    const prompt = `You are an AI-powered content personalization engine that curates and ranks content based on a user's unique persona.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 USER PERSONA (Use this to make ALL ranking decisions)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${userContext}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 PAGE INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Website: ${pageInfo.hostname}
+URL: ${pageInfo.url}
+
+PAGE CONTENT (simplified DOM):
+${pageInfo.simplifiedDOM}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 PERSONALIZATION TASK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 1: CONTENT EXTRACTION
+- Parse the PAGE CONTENT above - each item is formatted as:
+  ITEM N:
+  Text: ...
+  URL: ...
+  Image: ... (this is the imageUrl you MUST use)
+  ---
+- For EACH item, extract:
+  * title: from the Text field
+  * url: from the URL field
+  * imageUrl: from the Image field (USE THIS EXACTLY AS PROVIDED)
+  * metadata: any additional info from Text (upvotes, comments, views, author, date, etc.)
+- **CRITICAL**: Use the EXACT Image URL from each ITEM block
+- **DO NOT** generate, modify, or create image URLs
+- If an ITEM has no "Image:" line, set imageUrl to null
+- EXCLUDE: Ads, sponsored content, promoted posts
+
+STEP 2: INTELLIGENT RANKING (0-100 score)
+Rank each item based on relevance to the user's persona:
+
+HIGH PRIORITY (80-100): Content that directly matches:
+- User's stated interests
+- User's current goals
+- User's profession/expertise area
+- Topics they're actively trying to learn
+
+MEDIUM PRIORITY (50-79): Content that is:
+- Related to their interests but not core
+- At their preferred technical level
+- In a format they prefer (based on style preferences)
+
+LOW PRIORITY (0-49): Content that is:
+- Off-topic from their interests
+- Too basic/advanced for their technical level
+- Not aligned with their goals
+
+STEP 3: GENERATE PERSONALIZED FEED
+Create a beautiful, personalized feed showing the top 10-15 ranked items:
+
+DESIGN REQUIREMENTS:
+- Match the website's aesthetic
+- Clean, modern card design with clear hierarchy
+- Display ALL metadata prominently (votes, views, comments, etc.)
+- Include a personalized reason explaining WHY each item was selected
+
+PERSONALIZATION NOTES:
+- For EACH item, write a brief (1-2 sentence) explanation of why it matches their interests/goals
+- Use their persona to make these explanations personal and specific
+- Reference their goals, profession, or interests in your reasoning
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 OUTPUT FORMAT (STRICT JSON)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Return ONLY valid JSON in this exact format:
+{
+  "items": [
+    {
+      "id": "unique-id",
+      "title": "...",
+      "url": "...",
+      "imageUrl": "... (MUST be from page content, or null if not found)",
+      "score": 95,
+      "reason": "Personalized explanation referencing their interests/goals",
+      "metadata": {
+        "views": "1.2M",
+        "upvotes": "542",
+        "comments": "87",
+        "author": "...",
+        "channel": "...",
+        "date": "..."
+      }
+    }
+  ]
+}`
+
+    // Call Gemini API
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${c.env.GOOGLE_AI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 8000,
+            responseMimeType: 'application/json'
+          }
+        })
+      }
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Gemini API error:', errorText)
+      return c.json({ error: 'AI service unavailable' }, 500)
+    }
+
+    const data = await response.json()
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text
+
+    if (!generatedText) {
+      return c.json({ error: 'No content generated' }, 500)
+    }
+
+    // Parse the JSON response
+    const parsed = JSON.parse(generatedText)
+
+    return c.json(parsed)
+
+  } catch (error) {
+    console.error('Extension personalize error:', error)
+    return c.json({
+      error: error instanceof Error ? error.message : 'Internal server error'
+    }, 500)
+  }
+})
+
+// Helper function to build persona context
+function buildPersonaContext(persona: any): string {
+  let context = ''
+  let warnings: string[] = []
+
+  // Identity section
+  if (persona.name || persona.profession) {
+    context += '👤 IDENTITY:\n'
+    if (persona.name) context += `   Name: ${persona.name}\n`
+    if (persona.profession) context += `   Profession: ${persona.profession}\n`
+    context += '\n'
+  }
+
+  // Interests section - CRITICAL for ranking
+  if (persona.interests && persona.interests.length > 0) {
+    context += '❤️  CORE INTERESTS (Rank content matching these HIGHEST):\n'
+    persona.interests.forEach((interest: string, i: number) => {
+      context += `   ${i + 1}. ${interest}\n`
+    })
+    context += '\n'
+  } else {
+    warnings.push('No interests defined')
+  }
+
+  // Goals section - CRITICAL for personalization
+  if (persona.currentGoals && persona.currentGoals.length > 0) {
+    context += '🎯 CURRENT GOALS (Prioritize content helping achieve these):\n'
+    persona.currentGoals.forEach((goal: string, i: number) => {
+      context += `   ${i + 1}. ${goal}\n`
+    })
+    context += '\n'
+  } else {
+    warnings.push('No goals defined')
+  }
+
+  // Communication style preferences
+  if (persona.style || persona.communicationStyle) {
+    const style = persona.style || persona.communicationStyle
+    context += '📚 CONTENT PREFERENCES:\n'
+    context += `   Formality: ${style.formality || 'casual'}\n`
+    context += `   Detail Level: ${style.verbosity || 'balanced'}\n`
+    context += `   Technical Level: ${style.technical_level || style.technicalLevel || 'intermediate'}\n`
+    context += '\n'
+  }
+
+  // Language preferences
+  if (persona.preferredLanguage || (persona.languages && persona.languages.length > 0)) {
+    context += '🌍 LANGUAGES:\n'
+    if (persona.preferredLanguage) {
+      context += `   Primary: ${persona.preferredLanguage}\n`
+    }
+    if (persona.languages && persona.languages.length > 1) {
+      context += `   Also speaks: ${persona.languages.filter((l: string) => l !== persona.preferredLanguage).join(', ')}\n`
+    }
+    context += '\n'
+  }
+
+  // Add warnings if persona is incomplete
+  if (warnings.length > 0) {
+    context += '⚠️  PERSONA INCOMPLETE:\n'
+    warnings.forEach(warning => {
+      context += `   - ${warning}\n`
+    })
+    context += '   → Use generic content recommendations\n\n'
+  }
+
+  return context || '⚠️  EMPTY PERSONA: No user preferences available.\n'
+}
+
+// ============================================
 // MEMORY ENDPOINTS
 // ============================================
 
