@@ -1,0 +1,538 @@
+/* ========== PERSONALIZE BUTTON ========== */
+#twin-personalize-btn {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 60px 20px;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.personalize-button {
+  position: relative;
+  padding: 14px 42px;
+  font-size: 15px;
+  font-weight: 400;
+  color: #1a1a1a;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(10px);
+}
+
+.personalize-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 1);
+}
+
+.personalize-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.button-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.02) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.personalize-button:hover .button-gradient {
+  opacity: 1;
+}
+
+.button-text {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+}
+
+.button-shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.personalize-button:hover .button-shimmer {
+  left: 100%;
+}
+
+/* ========== ANIMATION OVERLAY ========== */
+#twin-animation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 15, 15, 0.94);
+  backdrop-filter: blur(12px);
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#twin-animation-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Container for the animation */
+.twin-loader {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Breathing pulse circles */
+.pulse-circle {
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  animation: breathe 3s ease-in-out infinite;
+}
+
+.pulse-circle:nth-child(1) {
+  width: 40px;
+  height: 40px;
+  animation-delay: 0s;
+}
+
+.pulse-circle:nth-child(2) {
+  width: 70px;
+  height: 70px;
+  animation-delay: 0.3s;
+  opacity: 0.7;
+}
+
+.pulse-circle:nth-child(3) {
+  width: 100px;
+  height: 100px;
+  animation-delay: 0.6s;
+  opacity: 0.4;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Center dot */
+.center-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+/* Floating particles */
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: float-orbit 8s linear infinite;
+}
+
+.particle:nth-child(5) {
+  animation-delay: 0s;
+  animation-duration: 7s;
+}
+
+.particle:nth-child(6) {
+  animation-delay: 1s;
+  animation-duration: 8s;
+}
+
+.particle:nth-child(7) {
+  animation-delay: 2s;
+  animation-duration: 9s;
+}
+
+.particle:nth-child(8) {
+  animation-delay: 3s;
+  animation-duration: 7.5s;
+}
+
+.particle:nth-child(9) {
+  animation-delay: 4s;
+  animation-duration: 8.5s;
+}
+
+@keyframes float-orbit {
+  0% {
+    transform: rotate(0deg) translateX(60px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: rotate(360deg) translateX(60px) rotate(-360deg);
+    opacity: 0;
+  }
+}
+
+/* Loading text */
+.loading-text {
+  margin-top: 60px;
+  font-size: 14px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 2px;
+  text-transform: lowercase;
+  animation: fade-pulse 2s ease-in-out infinite;
+}
+
+@keyframes fade-pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ========== PERSONALIZED FEED CONTAINER ========== */
+#twin-personalized-feed {
+  width: 100%;
+  min-height: 80vh;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== TINDER-STYLE SWIPE CONTAINER ========== */
+#swipe-container {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.swipe-card {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  background: #1a1a1a;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.swipe-card a {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.swipe-card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+
+.swipe-card[style*="display: none"] {
+  display: none !important;
+}
+
+.swipe-card.fade-in {
+  animation: cardFadeIn 0.4s ease-out;
+}
+
+.swipe-card.fade-out {
+  animation: cardFadeOut 0.3s ease-in;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes cardFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+}
+
+.swipe-buttons {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.swipe-btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: none;
+  font-size: 32px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.swipe-btn.dislike {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+}
+
+.swipe-btn.like {
+  background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+}
+
+.swipe-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.swipe-btn:active {
+  transform: scale(0.9);
+}
+
+.swipe-btn.dislike:hover {
+  box-shadow: 0 8px 32px rgba(255, 107, 107, 0.5);
+}
+
+.swipe-btn.like:hover {
+  box-shadow: 0 8px 32px rgba(81, 207, 102, 0.5);
+}
+
+/* ========== CARDS GRID ========== */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.content-card {
+  background: #1a1a1a;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  animation: cardFadeIn 0.5s ease-out;
+}
+
+.content-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.content-card a {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.card-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+}
+
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-content {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.card-metadata {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.card-reason {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ========== NO CONTENT VIEW ========== */
+.twin-no-content {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 48px 32px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  color: white;
+  animation: fadeIn 0.8s ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.twin-no-content h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 16px 0;
+  line-height: 1.2;
+}
+
+.twin-no-content p {
+  font-size: 18px;
+  opacity: 0.95;
+  line-height: 1.6;
+  margin: 0 0 32px 0;
+}
+
+.twin-suggestion {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.twin-suggestion:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(8px);
+}
+
+.twin-suggestion-emoji {
+  font-size: 32px;
+}
+
+.twin-suggestion-content {
+  flex: 1;
+  text-align: left;
+}
+
+.twin-suggestion-title {
+  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.twin-suggestion-reason {
+  opacity: 0.9;
+  font-size: 14px;
+  line-height: 1.4;
+}
