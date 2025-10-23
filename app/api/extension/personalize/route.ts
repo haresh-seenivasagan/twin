@@ -112,7 +112,7 @@ export async function POST(request: Request) {
       return jsonError('AI service unavailable', 502)
     }
 
-    const generated = await response.json()
+    const generated = await response.json() as any
     const generatedText = generated?.candidates?.[0]?.content?.parts?.[0]?.text
 
     if (!generatedText || typeof generatedText !== 'string') {
